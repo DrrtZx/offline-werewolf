@@ -35,7 +35,17 @@ export function narrate(prev: GameState, next: GameState): string | null {
   }
 
   // Fajar
-  if (prev.phase === 'NIGHT_CLOSING' && next.phase !== 'NIGHT_CLOSING' && next.phase !== 'NIGHT_HANDOVER') {
+  if (prev.phase === 'NIGHT_CLOSING' && next.phase === 'DAWN_REPORT') {
+    const dead = next.dawnSummary?.deadPlayers ?? [];
+    parts.push(
+      dead.length === 0
+        ? 'Fajar tiba. Malam ini, tidak ada korban.'
+        : `Fajar tiba. ${dead.map((p) => p.name).join(' dan ')} ditemukan tewas.`,
+    );
+    return parts.join(' ');
+  }
+
+  if (prev.phase === 'NIGHT_CLOSING' && next.phase === 'HUNTER_TRIGGER' && next.hunterStep === 'public') {
     const dead = next.dawnSummary?.deadPlayers ?? [];
     parts.push(
       dead.length === 0
@@ -44,8 +54,6 @@ export function narrate(prev: GameState, next: GameState): string | null {
     );
     const hunter = hunterIntro(next);
     if (hunter) parts.push(hunter);
-    const win = winText(next);
-    if (win) parts.push(win);
     return parts.join(' ');
   }
 
@@ -71,7 +79,7 @@ export function narrate(prev: GameState, next: GameState): string | null {
   if (next.phase === 'HUNTER_TRIGGER') {
     if (next.hunterStep === 'closing' && prev.hunterStep === 'action') {
       const victim = next.players.find((p) => p.id === next.lastHunterVictimId);
-      return victim ? `${victim.name} gugur oleh tembakan Hunter!` : null;
+      return victim ? `${victim.name} gugur oleh tembakan Hunter!` : 'Hunter memilih untuk tidak menembak.';
     }
     if (
       next.hunterStep === 'public' &&

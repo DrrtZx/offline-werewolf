@@ -1,12 +1,21 @@
 import type { Metadata, Viewport } from 'next';
-import { Inter } from 'next/font/google';
+import { Fredoka, Grenze_Gotisch } from 'next/font/google';
 import './globals.css';
 
-const inter = Inter({
+/** Sans playful (rounded tapi tenang) untuk body & kontrol UI. */
+const fredoka = Fredoka({
   subsets: ['latin'],
-  weight: ['400', '700'],
+  weight: ['400', '500', '600'],
   display: 'swap',
   variable: '--font-main',
+});
+
+/** Display gothic-antiqua untuk judul & brand — playful gothic signature. */
+const gotisch = Grenze_Gotisch({
+  subsets: ['latin'],
+  weight: ['500', '700'],
+  display: 'swap',
+  variable: '--font-display',
 });
 
 export const metadata: Metadata = {
@@ -19,13 +28,13 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   viewportFit: 'cover',
-  themeColor: '#0a0918',
+  themeColor: '#12101a',
   colorScheme: 'dark',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="id" className={inter.variable}>
+    <html lang="id" className={`${fredoka.variable} ${gotisch.variable}`}>
       <body>{children}</body>
     </html>
   );

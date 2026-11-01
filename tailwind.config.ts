@@ -37,11 +37,12 @@ const config: Config = {
         'danger-strong': token('danger-strong'),
       },
       borderRadius: {
-        card: '22px',
-        control: '16px',
+        card: '20px',
+        control: '14px',
       },
       fontFamily: {
         sans: ['var(--font-main)', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif'],
+        display: ['var(--font-display)', 'Georgia', 'serif'],
       },
       maxWidth: {
         game: '430px',

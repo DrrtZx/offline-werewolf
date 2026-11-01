@@ -7,6 +7,7 @@ import { checkAddPlayer } from '@/lib/engine/validation';
 import { MAX_NAME_LENGTH, MAX_PLAYERS } from '@/types/game';
 import Button from '@/components/game/Button';
 import { Card } from '@/components/game/ui';
+import { Icon } from '@/components/icons/Icon';
 
 export default function SetupPlayers() {
   const players = useGame((s) => s.players);
@@ -73,7 +74,7 @@ export default function SetupPlayers() {
               aria-label={`Hapus ${p.name}`}
               onClick={() => dispatch({ type: 'REMOVE_PLAYER', playerId: p.id })}
             >
-              <span aria-hidden="true">&times;</span>
+              <Icon name="x" size={16} />
             </button>
           </li>
         ))}
@@ -81,13 +82,13 @@ export default function SetupPlayers() {
 
       <div className="flex gap-2">
         <Button variant="secondary" small onClick={() => dispatch({ type: 'QUICK_FILL_PLAYERS', count: 6 })}>
-          ⚡ 6 Pemain
+          <Icon name="bolt" size={15} className="text-accent" /> 6 Pemain
         </Button>
         <Button variant="secondary" small onClick={() => dispatch({ type: 'QUICK_FILL_PLAYERS', count: 8 })}>
-          ⚡ 8 Pemain
+          <Icon name="bolt" size={15} className="text-accent" /> 8 Pemain
         </Button>
         <Button variant="secondary" small onClick={() => dispatch({ type: 'CLEAR_PLAYERS' })}>
-          🗑️ Bersihkan
+          <Icon name="trash" size={15} /> Bersihkan
         </Button>
       </div>
     </Card>

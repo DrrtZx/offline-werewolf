@@ -46,7 +46,7 @@ export function defaultSettings(): GameSettings {
     discussionTimerMinutes: 5,
     minNightDurationSeconds: 8,
     doctorSelfProtect: true,
-    hunterMandatory: true,
+    hunterMandatory: false,
     ttsEnabled: true,
   };
 }
@@ -226,12 +226,13 @@ export function gameReducer(state: GameState, action: GameAction, env: ReducerEn
     case 'ADJUST_ROLE_COUNT': {
       if (state.phase !== 'SETUP') return state;
       const N = state.players.length;
-      const current = calculateFinalRoles(N, state.roleConfig, env.rng)[action.role];
+      const roles = calculateFinalRoles(N, state.roleConfig, env.rng);
+      const current = roles[action.role];
       if (action.role === 'werewolf') {
         const next = Math.max(1, Math.min(maxWolvesFor(N), current + action.delta));
         return withPatch(state, { roleConfig: { ...state.roleConfig, werewolf: next } });
       }
-      const next = Math.max(0, Math.min(N - 1, current + action.delta));
+      const next = Math.max(0, Math.min(N - roles.werewolf - 1, current + action.delta));
       return withPatch(state, { roleConfig: { ...state.roleConfig, hunter: next } });
     }
 
@@ -355,6 +356,7 @@ export function gameReducer(state: GameState, action: GameAction, env: ReducerEn
         players: state.players,
         history: state.history,
         nightActions: state.nightActions,
+        doctorSelfProtect: state.settings.doctorSelfProtect,
         round: state.round,
         turnIndex: state.turnIndex,
       });
@@ -418,6 +420,14 @@ export function gameReducer(state: GameState, action: GameAction, env: ReducerEn
         },
       );
     }
+
+    case 'HUNTER_SKIP':
+      if (state.phase !== 'HUNTER_TRIGGER' || state.hunterStep !== 'action' || state.settings.hunterMandatory) return state;
+      return to(
+        state,
+        { phase: 'HUNTER_TRIGGER', cardStep: null, hunterStep: 'closing' },
+        { lastHunterVictimId: null },
+      );
 
     case 'HUNTER_DONE': {
       if (state.phase !== 'HUNTER_TRIGGER' || state.hunterStep !== 'closing') return state;

@@ -2,6 +2,8 @@
 // GAME TYPES - Type definitions for Werewolf Pass-and-Play
 // ==========================================================================
 
+import type { IconName } from '@/components/icons/Icon';
+
 export const ROLES = ['werewolf', 'villager', 'seer', 'doctor', 'guardian', 'hunter'] as const;
 export type Role = (typeof ROLES)[number];
 
@@ -47,7 +49,7 @@ export interface Player {
 
 export interface RoleMeta {
   name: string;
-  icon: string;
+  icon: IconName;
   team: RoleTeam;
   tone: TeamTone;
   desc: string;
@@ -84,9 +86,9 @@ export interface GameSettings {
   showHunterTeam: boolean;
   discussionTimerMinutes: number;
   minNightDurationSeconds: number;
-  /** Didefinisikan di versi asli tetapi tidak dipakai logika game. */
+  /** Mengizinkan Doctor melindungi diri sendiri sekali per permainan. */
   doctorSelfProtect: boolean;
-  /** Didefinisikan di versi asli tetapi tidak dipakai logika game. */
+  /** Hunter yang gugur wajib memilih target tembakan. */
   hunterMandatory: boolean;
   ttsEnabled: boolean;
 }
@@ -142,6 +144,7 @@ export interface NightOption {
   id: string;
   label: string;
   disabled?: boolean;
+  voteCount?: number;
 }
 
 export interface NightActionCard {
@@ -227,6 +230,7 @@ export type GameAction =
   | { type: 'HUNTER_PUBLIC_NEXT' }
   | { type: 'HUNTER_COVER_OPEN' }
   | { type: 'HUNTER_CONFIRM'; targetId: string }
+  | { type: 'HUNTER_SKIP' }
   | { type: 'HUNTER_DONE' }
   | { type: 'TIMER_ADD'; ms: number }
   | { type: 'TIMER_TOGGLE' }
@@ -246,8 +250,8 @@ export interface ReducerEnv {
 // --------------------------------------------------------------------------
 
 export const STORAGE_KEY = 'werewolf_pass_and_play_v3_state';
-/** Versi skema state tersimpan. v3 = format versi asli (tanpa `_version`). */
-export const STATE_VERSION = 4;
+/** Versi skema state tersimpan. v5 menambahkan rekap hint Hunter. */
+export const STATE_VERSION = 5;
 export const MAX_PLAYERS = 16;
 export const MIN_PLAYERS = 4;
 export const MAX_NAME_LENGTH = 12;

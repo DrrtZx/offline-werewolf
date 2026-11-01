@@ -13,23 +13,19 @@ export default function DawnReport() {
 
   return (
     <Card className="mt-6 text-center" live>
-      <BigIcon size="3.5rem">🌅</BigIcon>
+      <BigIcon name="dawn" size={40} />
       <h1 className="mb-2 text-3xl">Fajar Menyingsing</h1>
       <p className="mb-4 text-muted">Matahari telah terbit. Semua pemain silakan membuka mata!</p>
 
       {victims.length === 0 ? (
         <Alert tone="info" className="flex-col items-center p-6 text-center">
-          <div className="text-4xl" aria-hidden="true">
-            🕊️
-          </div>
+          <BigIcon name="dove" size={34} />
           <h3 className="text-lg text-white">Malam Tenang</h3>
           <p className="text-muted">Malam ini tidak ada korban yang gugur!</p>
         </Alert>
       ) : (
         <Alert tone="danger" className="flex-col items-center p-5 text-center">
-          <div className="text-4xl" aria-hidden="true">
-            ⚰️
-          </div>
+          <BigIcon name="coffin" size={34} />
           <h3 className="text-lg text-white">Korban Malam Ini:</h3>
           <div className="my-2 break-words text-2xl font-bold text-white">
             {victims

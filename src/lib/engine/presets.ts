@@ -52,23 +52,23 @@ export function calculateFinalRoles(
   let guardianCount = statusToCount(config.guardian, rng);
 
   let occupied = wolfCount + hunterCount + seerCount + doctorCount + guardianCount;
-  if (occupied > N) {
+  const maxOccupied = Math.max(0, N - 1);
+  if (occupied > maxOccupied) {
     // Urutan pemangkasan: guardian -> doctor -> seer -> hunter
-    if (guardianCount > 0 && occupied > N) {
+    if (guardianCount > 0 && occupied > maxOccupied) {
       guardianCount = 0;
       occupied--;
     }
-    if (doctorCount > 0 && occupied > N) {
+    if (doctorCount > 0 && occupied > maxOccupied) {
       doctorCount = 0;
       occupied--;
     }
-    if (seerCount > 0 && occupied > N) {
+    if (seerCount > 0 && occupied > maxOccupied) {
       seerCount = 0;
       occupied--;
     }
-    if (hunterCount > 0 && occupied > N) {
-      hunterCount = Math.max(0, N - wolfCount);
-      occupied = wolfCount + hunterCount;
+    if (hunterCount > 0 && occupied > maxOccupied) {
+      hunterCount = Math.max(0, N - wolfCount - 1);
     }
   }
 

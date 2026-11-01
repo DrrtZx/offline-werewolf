@@ -55,13 +55,14 @@ export default function SetupSettings() {
         <Switch id="hunterteam" settingKey="showHunterTeam" />
       </Row>
 
-      <Row id="night" name="Durasi Min. Malam" desc="Mencegah kebocoran waktu">
+      <Row id="night" name="Durasi Min. Aksi Malam" desc="Waktu minimum untuk setiap giliran aksi malam">
         <select
           className="input !w-auto"
           aria-labelledby="night-label"
           value={nightSeconds}
           onChange={(e) => dispatch({ type: 'SET_NIGHT_DURATION', seconds: Number(e.target.value) })}
         >
+          <option value={3}>3 Detik</option>
           <option value={5}>5 Detik</option>
           <option value={8}>8 Detik (Default)</option>
           <option value={10}>10 Detik</option>
@@ -81,11 +82,11 @@ export default function SetupSettings() {
         </select>
       </Row>
 
-      <p className="mt-4 mb-1 text-xs font-bold uppercase tracking-wider text-muted">Belum aktif (disimpan saja)</p>
-      <Row id="docself" name="Doctor Boleh Lindungi Diri" desc="Belum memengaruhi aturan permainan (sama seperti versi asli)">
+      <p className="mt-4 mb-1 text-xs font-bold uppercase tracking-wider text-muted">Aturan Lanjutan</p>
+      <Row id="docself" name="Doctor Boleh Lindungi Diri" desc="Doctor dapat melindungi dirinya sendiri satu kali selama permainan">
         <Switch id="docself" settingKey="doctorSelfProtect" />
       </Row>
-      <Row id="huntermand" name="Hunter Wajib Menembak" desc="Belum memengaruhi aturan permainan (sama seperti versi asli)">
+      <Row id="huntermand" name="Hunter Wajib Menembak" desc="Jika mati, Hunter harus memilih target dan tidak bisa melewatkan tembakan">
         <Switch id="huntermand" settingKey="hunterMandatory" />
       </Row>
     </Card>

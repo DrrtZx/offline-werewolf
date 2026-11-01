@@ -8,18 +8,20 @@ import Button from '@/components/game/Button';
 import { OptionList, PlayerOption } from '@/components/game/PlayerOption';
 import TapButton from '@/components/game/TapButton';
 import { Alert, Badge, BigIcon, Card, PlayerNameBlock } from '@/components/game/ui';
+import { Icon } from '@/components/icons/Icon';
 import type { Player } from '@/types/game';
 
 function Public({ hunter }: { hunter: Player }) {
+  const hunterMandatory = useGame((s) => s.settings.hunterMandatory);
   return (
     <Card tone="special" className="mt-8 px-5 py-8 text-center" live>
-      <BigIcon>🏹</BigIcon>
+      <BigIcon name="bow" />
       <div className="mb-2">
         <Badge tone="special">Tembakan Terakhir</Badge>
       </div>
       <h1 className="mb-0 break-words text-3xl text-white">{hunter.name} adalah Hunter!</h1>
       <p className="mx-0 mb-6 mt-4 text-[1.05rem] leading-relaxed text-muted">
-        Sebelum menghembuskan napas terakhir, Hunter berhak menembak mati 1 pemain pilihannya!
+        Sebelum menghembuskan napas terakhir, Hunter {hunterMandatory ? 'harus' : 'boleh'} menembak mati 1 pemain pilihannya.
       </p>
       <Button lockOnMountMs={400} onClick={() => dispatch({ type: 'HUNTER_PUBLIC_NEXT' })}>
         Serahkan HP ke {hunter.name}
@@ -31,7 +33,7 @@ function Public({ hunter }: { hunter: Player }) {
 function Cover({ hunter }: { hunter: Player }) {
   return (
     <Card className="mt-8 px-5 py-9 text-center">
-      <BigIcon size="3rem">🎯</BigIcon>
+      <BigIcon name="target" size={48} />
       <h2 className="mb-2 text-xl">Bidikan Hunter</h2>
       <p className="text-muted">Silakan berikan HP ini secara privat kepada:</p>
       <PlayerNameBlock name={hunter.name} />
@@ -46,6 +48,7 @@ function Cover({ hunter }: { hunter: Player }) {
 function Action({ hunter }: { hunter: Player }) {
   const players = useGame((s) => s.players);
   const aimedTargetId = useGame((s) => s.aimedTargetId);
+  const hunterMandatory = useGame((s) => s.settings.hunterMandatory);
   const targets = players.filter((p) => p.isAlive && p.id !== hunter.id);
   const locked = useMountLock(400);
 
@@ -61,7 +64,8 @@ function Action({ hunter }: { hunter: Player }) {
 
       {aimedTargetId && (
         <Alert tone="info" className="mb-4">
-          🎯 Target Siaga malam telah terpilih otomatis (dapat diubah).
+          <Icon name="target" size={18} className="mr-1.5 inline-block align-[-3px]" />
+          Target Siaga malam telah terpilih otomatis (dapat diubah).
         </Alert>
       )}
 
@@ -86,6 +90,11 @@ function Action({ hunter }: { hunter: Player }) {
         >
           Tembak Sekarang!
         </Button>
+        {!hunterMandatory && (
+          <Button variant="secondary" onClick={() => dispatch({ type: 'HUNTER_SKIP' })}>
+            Tidak Memilih Target
+          </Button>
+        )}
       </div>
     </Card>
   );
@@ -95,10 +104,12 @@ function Closing() {
   const victimName = useGame((s) => s.players.find((p) => p.id === s.lastHunterVictimId)?.name);
   return (
     <Card className="mt-8 px-5 py-8 text-center" live>
-      <BigIcon>💥</BigIcon>
-      <h2 className="mb-2 text-xl">Tembakan Dilepaskan!</h2>
-      <div className="my-4 break-words text-2xl font-bold text-danger">{victimName ?? 'Seorang pemain'} tertembak gugur!</div>
-      <p className="mb-5 text-muted">Diumumkan ke seluruh warga desa.</p>
+      <BigIcon name={victimName ? 'burst' : 'check'} />
+      <h2 className="mb-2 text-xl">{victimName ? 'Tembakan Dilepaskan!' : 'Tidak Ada Target Dipilih'}</h2>
+      <div className={`my-4 break-words text-2xl font-bold ${victimName ? 'text-danger' : 'text-muted'}`}>
+        {victimName ? `${victimName} tertembak gugur!` : 'Hunter memilih untuk tidak menembak.'}
+      </div>
+      {victimName && <p className="mb-5 text-muted">Diumumkan ke seluruh warga desa.</p>}
       <Button lockOnMountMs={400} onClick={() => dispatch({ type: 'HUNTER_DONE' })}>
         Lanjutkan
       </Button>

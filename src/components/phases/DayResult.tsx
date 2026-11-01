@@ -5,6 +5,7 @@ import { useGame } from '@/store/GameView';
 import { ROLE_METAS } from '@/lib/engine/roles';
 import Button from '@/components/game/Button';
 import { Alert, BigIcon, Card } from '@/components/game/ui';
+import { Icon } from '@/components/icons/Icon';
 
 export default function DayResult() {
   const eliminated = useGame((s) => s.dayEliminatedPlayer);
@@ -17,7 +18,7 @@ export default function DayResult() {
 
       {eliminated ? (
         <Alert tone="danger" className="flex-col items-center p-5 text-center">
-          <BigIcon size="2.8rem">⚖️</BigIcon>
+          <BigIcon name="scales" size={34} />
           <h3 className="text-lg text-white">Warga Dieliminasi:</h3>
           <div className="my-2 break-words text-3xl font-bold text-white">
             {eliminated.name}
@@ -29,7 +30,7 @@ export default function DayResult() {
         </Alert>
       ) : (
         <Alert tone="info" className="flex-col items-center p-5 text-center">
-          <BigIcon size="2.8rem">🕊️</BigIcon>
+          <BigIcon name="dove" size={34} />
           <h3 className="text-lg text-white">Pemilihan Dilewati</h3>
           <p className="text-muted">Hari ini warga memutuskan untuk tidak mengeliminasi siapa pun.</p>
         </Alert>
@@ -37,7 +38,10 @@ export default function DayResult() {
 
       <div className="mt-5">
         <Button className="!min-h-[58px] !text-lg" lockOnMountMs={400} onClick={() => dispatch({ type: 'NEXT_NIGHT' })}>
-          🌙 Masuk ke Malam Berikutnya
+          <span className="inline-flex translate-y-[2px] items-center gap-2">
+            <Icon name="crescent-arrow" size={18} />
+          </span>{' '}
+          Masuk ke Malam Berikutnya
         </Button>
       </div>
     </Card>

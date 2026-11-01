@@ -24,7 +24,7 @@ import type { NightOption, Player } from '@/types/game';
 function Cover({ player }: { player: Player }) {
   return (
     <Card className="mt-8 px-5 py-9 text-center">
-      <BigIcon size="3rem">🌙</BigIcon>
+      <BigIcon name="moon" size={32} />
       <h2 className="mb-2 text-xl">Giliran Malam</h2>
       <p className="text-muted">Operkan HP secara perlahan kepada:</p>
       <PlayerNameBlock name={player.name} />
@@ -47,9 +47,7 @@ function ResultDialog({ result, onClose }: { result: ResultModal | null; onClose
     <Modal open={result !== null} titleId="night-result-title" onClose={onClose}>
       {result && (
         <>
-          <div className="mb-3 text-6xl" aria-hidden="true">
-            {seer ? (seer.isWolf ? '🐺' : '✅') : '📊'}
-          </div>
+          <BigIcon name={seer ? (seer.isWolf ? 'wolf' : 'check') : 'chart'} size={40} />
           <h2 id="night-result-title" className="mb-4 text-xl">
             {seer ? 'Hasil Penerawangan' : 'Opini Warga Desa'}
           </h2>
@@ -98,6 +96,7 @@ function ActionCard({ player }: { player: Player }) {
       players: s.players,
       history: s.history,
       nightActions: s.nightActions,
+      doctorSelfProtect: s.settings.doctorSelfProtect,
       round: s.round,
       turnIndex: s.turnIndex,
     });
@@ -144,6 +143,7 @@ function ActionCard({ player }: { player: Player }) {
               label={opt.label}
               selected={choice === opt.id}
               disabled={opt.disabled === true || inputLocked}
+              voteCount={opt.voteCount}
               onSelect={() => setChoice(opt.id)}
             />
           ))}
@@ -170,7 +170,7 @@ function Closing() {
 
   return (
     <Card className="mt-8 px-5 py-9 text-center">
-      <BigIcon size="3rem">✅</BigIcon>
+      <BigIcon name="check" size={32} />
       <h2 className="mb-2 text-xl">Aksi Tersimpan</h2>
       <p className="mb-5 text-muted">Pilihanmu telah diamankan dan dihapus dari layar.</p>
       <Button disabled={!ready} onClick={() => dispatch({ type: 'NIGHT_NEXT' })}>

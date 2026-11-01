@@ -37,9 +37,9 @@ export function validateSetup(
   if (roles.werewolf >= N - roles.werewolf) {
     return { valid: false, message: 'Jumlah Serigala harus lebih sedikit dari warga.' };
   }
+  if (roles.villager < 1) return { valid: false, message: 'Minimal harus ada 1 Villager biasa.' };
 
-  const warning = roles.villager === 0 ? 'Perhatian: Tidak ada Warga Biasa (Villager) tersisa.' : null;
-  return { valid: true, warning, roles };
+  return { valid: true, warning: null, roles };
 }
 
 export type AddPlayerCheck = { ok: true; name: string } | { ok: false; message: string };

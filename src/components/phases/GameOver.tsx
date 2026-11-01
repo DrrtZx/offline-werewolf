@@ -5,6 +5,7 @@ import { useGame } from '@/store/GameView';
 import { ROLE_METAS } from '@/lib/engine/roles';
 import Button from '@/components/game/Button';
 import { RoleBadge, BigIcon, Card } from '@/components/game/ui';
+import { Icon } from '@/components/icons/Icon';
 
 export default function GameOver() {
   const winner = useGame((s) => s.winner);
@@ -13,7 +14,7 @@ export default function GameOver() {
 
   return (
     <Card tone={wolfWin ? 'wolf' : 'village'} className="mt-3 px-4 py-7 text-center" live>
-      <BigIcon size="4.5rem">{wolfWin ? '🐺' : '🎉'}</BigIcon>
+      <BigIcon name={wolfWin ? 'wolf' : 'sparkle'} size={72} />
       <h1 className={`mb-1 text-3xl ${wolfWin ? 'text-wolf' : 'text-village'}`}>
         {wolfWin ? 'Kubu Serigala Menang!' : 'Kubu Warga Menang!'}
       </h1>
@@ -43,10 +44,12 @@ export default function GameOver() {
 
       <div className="flex flex-col gap-2.5">
         <Button lockOnMountMs={400} onClick={() => dispatch({ type: 'RESET_GAME', fullReset: false })}>
-          🔄 Main Lagi (Pemain &amp; Opsi Sama)
+          <Icon name="refresh" size={18} className="mr-1.5 inline-block align-[-3px]" />
+          Main Lagi (Pemain &amp; Opsi Sama)
         </Button>
         <Button variant="secondary" onClick={() => dispatch({ type: 'RESET_GAME', fullReset: true })}>
-          ⚙️ Setup Permainan Baru
+          <Icon name="gear" size={18} className="mr-1.5 inline-block align-[-3px]" />
+          Setup Permainan Baru
         </Button>
       </div>
     </Card>

@@ -50,9 +50,10 @@ interface PlayerOptionProps {
   onSelect: () => void;
   disabled?: boolean;
   tone?: 'accent' | 'danger';
+  voteCount?: number;
 }
 
-export function PlayerOption({ label, selected, onSelect, disabled = false, tone = 'accent' }: PlayerOptionProps) {
+export function PlayerOption({ label, selected, onSelect, disabled = false, tone = 'accent', voteCount = 0 }: PlayerOptionProps) {
   return (
     <StaggerItem>
       <m.button
@@ -65,15 +66,25 @@ export function PlayerOption({ label, selected, onSelect, disabled = false, tone
         whileTap={disabled ? undefined : { scale: 0.98 }}
       >
         <span>{label}</span>
-        <span className="radio" aria-hidden="true">
-          {selected && (
-            <m.span
-              className="radio-dot"
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ type: 'spring', stiffness: 520, damping: 28 }}
-            />
+        <span className="inline-flex items-center gap-2">
+          {voteCount > 0 && (
+            <span
+              className="inline-flex h-6 min-w-6 items-center justify-center rounded-full border border-accent/40 bg-accent/15 px-1.5 text-xs font-bold text-accent"
+              aria-label={`${voteCount} suara`}
+            >
+              {voteCount}
+            </span>
           )}
+          <span className="radio" aria-hidden="true">
+            {selected && (
+              <m.span
+                className="radio-dot"
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ type: 'spring', stiffness: 520, damping: 28 }}
+              />
+            )}
+          </span>
         </span>
       </m.button>
     </StaggerItem>

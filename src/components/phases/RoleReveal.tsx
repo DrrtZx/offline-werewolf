@@ -10,12 +10,13 @@ import { EASE } from '@/lib/ui/motion';
 import Button from '@/components/game/Button';
 import TapButton from '@/components/game/TapButton';
 import { Alert, BigIcon, Badge, Card, PlayerNameBlock } from '@/components/game/ui';
+import { Icon, type IconName } from '@/components/icons/Icon';
 import type { Player } from '@/types/game';
 
 function Cover({ player }: { player: Player }) {
   return (
     <Card className="mt-8 px-5 py-9 text-center">
-      <BigIcon size="3rem">✉️</BigIcon>
+      <BigIcon name="envelope" size={32} />
       <h2 className="mb-2 text-xl">Pembagian Kartu Rahasia</h2>
       <p className="text-muted">Silakan berikan HP ini secara privat kepada:</p>
       <PlayerNameBlock name={player.name} />
@@ -37,13 +38,13 @@ function RoleCard({ player }: { player: Player }) {
   if (!player.role) return null;
   const meta = ROLE_METAS[player.role];
 
-  let teammates: { label: string; names: string[]; tone: 'warning' | 'info'; icon: string } | null = null;
+  let teammates: { label: string; names: string[]; tone: 'warning' | 'info'; icon: IconName } | null = null;
   if (player.role === 'werewolf' && showWolfTeam) {
     const names = players.filter((p) => p.role === 'werewolf' && p.id !== player.id).map((p) => p.name);
-    if (names.length > 0) teammates = { label: 'Rekan Serigalamu:', names, tone: 'warning', icon: '🐺' };
+    if (names.length > 0) teammates = { label: 'Rekan Serigalamu:', names, tone: 'warning', icon: 'wolf' };
   } else if (player.role === 'hunter' && showHunterTeam) {
     const names = players.filter((p) => p.role === 'hunter' && p.id !== player.id).map((p) => p.name);
-    if (names.length > 0) teammates = { label: 'Rekan Hunter:', names, tone: 'info', icon: '🏹' };
+    if (names.length > 0) teammates = { label: 'Rekan Hunter:', names, tone: 'info', icon: 'bow' };
   }
 
   return (
@@ -54,7 +55,7 @@ function RoleCard({ player }: { player: Player }) {
         transition={{ duration: 0.45, ease: EASE }}
       >
         <Card tone={meta.tone} className="px-5 py-7 text-center">
-          <BigIcon size="4.5rem">{meta.icon}</BigIcon>
+          <BigIcon name={meta.icon} size={48} />
           <div className="mb-2">
             <Badge tone={meta.tone}>{meta.team}</Badge>
           </div>
@@ -65,7 +66,13 @@ function RoleCard({ player }: { player: Player }) {
               <div>
                 <strong>{teammates.label}</strong>
                 <br />
-                {teammates.names.map((n) => `${teammates.icon} ${n}`).join(', ')}
+                <span className="inline-flex items-center gap-1">
+                  {teammates.names.map((n) => (
+                    <span key={n} className="inline-flex items-center gap-1">
+                      <Icon name={teammates.icon} size={14} className="inline-block" /> {n}
+                    </span>
+                  )).reduce((acc, item, i) => (i === 0 ? [item] : [...acc, ', ', item]), [] as React.ReactNode[])}
+                </span>
               </div>
             </Alert>
           )}
@@ -81,7 +88,7 @@ function RoleCard({ player }: { player: Player }) {
 function Closing() {
   return (
     <Card className="mt-8 px-5 py-9 text-center">
-      <BigIcon size="3rem">🔒</BigIcon>
+      <BigIcon name="lock" size={30} />
       <h2 className="mb-2 text-xl">Kartu Ditutup</h2>
       <p className="mb-5 text-muted">Identitasmu aman. Jangan beri tahu siapa pun!</p>
       <Button lockOnMountMs={400} onClick={() => dispatch({ type: 'REVEAL_NEXT' })}>

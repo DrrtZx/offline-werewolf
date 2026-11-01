@@ -7,21 +7,25 @@ export interface NightCardContext {
   player: Player;
   players: readonly Player[];
   history: Pick<GameHistory, 'lastDoctorTarget' | 'doctorSelfUsed'>;
-  nightActions: Pick<NightActions, 'doctorTarget'>;
+  nightActions: Pick<NightActions, 'doctorTarget' | 'wolfVotes' | 'hunterVotes'>;
+  doctorSelfProtect: boolean;
   round: number;
   turnIndex: number;
 }
 
 /** Daftar opsi kartu aksi malam (belum diacak). Kartu yang tampil identik secara struktur untuk semua role. */
 export function getNightActionCard(ctx: NightCardContext): NightActionCard {
-  const { player, players, history, nightActions, round, turnIndex } = ctx;
+  const { player, players, history, nightActions, doctorSelfProtect, round, turnIndex } = ctx;
   const living = players.filter((p) => p.isAlive);
 
   switch (player.role) {
     case 'werewolf':
       return {
-        title: 'Pilih mangsa malam ini',
-        options: living.filter((p) => p.role !== 'werewolf').map((p) => ({ id: p.id, label: p.name })),
+        title: 'Pilih mangsa malam ini (suara tim terlihat)',
+        options: withVoteCounts(
+          living.filter((p) => p.role !== 'werewolf').map((p) => ({ id: p.id, label: p.name })),
+          nightActions.wolfVotes,
+        ),
       };
     case 'seer':
       return {
@@ -40,7 +44,10 @@ export function getNightActionCard(ctx: NightCardContext): NightActionCard {
             disabled = true;
             subtext = ' (Tidak boleh sama 2 malam berturut-turut)';
           }
-          if (p.id === player.id && selfBlocked) {
+          if (p.id === player.id && !doctorSelfProtect) {
+            disabled = true;
+            subtext = ' (Lindungi diri dinonaktifkan)';
+          } else if (p.id === player.id && selfBlocked) {
             disabled = true;
             subtext = ' (Batas lindungi diri sudah habis)';
           }
@@ -58,8 +65,11 @@ export function getNightActionCard(ctx: NightCardContext): NightActionCard {
       };
     case 'hunter':
       return {
-        title: 'Pilih target siaga tembak',
-        options: living.filter((p) => p.id !== player.id).map((p) => ({ id: p.id, label: p.name })),
+        title: 'Pilih target bidikan siaga (suara Hunter terlihat)',
+        options: withVoteCounts(
+          living.filter((p) => p.id !== player.id).map((p) => ({ id: p.id, label: p.name })),
+          nightActions.hunterVotes,
+        ),
       };
     case 'villager':
     default: {
@@ -70,6 +80,15 @@ export function getNightActionCard(ctx: NightCardContext): NightActionCard {
       return { title: quiz.q, options: quiz.options.map((label, i) => ({ id: `opt_${i}`, label })) };
     }
   }
+}
+
+function withVoteCounts<T extends NightActionCard['options'][number]>(
+  options: T[],
+  votes: Record<string, string>,
+): T[] {
+  const counts = new Map<string, number>();
+  for (const targetId of Object.values(votes)) counts.set(targetId, (counts.get(targetId) ?? 0) + 1);
+  return options.map((option) => ({ ...option, voteCount: counts.get(option.id) ?? 0 }));
 }
 
 export function isValidNightChoice(card: NightActionCard, targetId: string): boolean {
@@ -120,7 +139,10 @@ export function applyNightChoice(
       return { nightActions: { ...nightActions, guardianTarget: targetId }, history };
     case 'hunter':
       return {
-        nightActions: { ...nightActions, hunterVotes: { ...nightActions.hunterVotes, [player.id]: targetId } },
+        nightActions: {
+          ...nightActions,
+          hunterVotes: { ...nightActions.hunterVotes, [player.id]: targetId },
+        },
         history,
       };
     case 'villager':

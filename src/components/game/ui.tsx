@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import type { RoleMeta, TeamTone } from '@/types/game';
+import { IconGlyph, type IconName } from '@/components/icons/Icon';
 
 type CardTone = TeamTone | 'neutral';
 
@@ -35,7 +36,7 @@ export function Badge({ tone, children }: { tone: TeamTone; children: ReactNode 
 export function RoleBadge({ meta }: { meta: RoleMeta }) {
   return (
     <Badge tone={meta.tone}>
-      <span aria-hidden="true">{meta.icon}</span> {meta.name}
+      <IconGlyph name={meta.icon} size={13} /> {meta.name}
     </Badge>
   );
 }
@@ -52,10 +53,13 @@ export function Alert({
   return <div className={`alert alert-${tone} ${className}`}>{children}</div>;
 }
 
-export function BigIcon({ children, size = '4rem' }: { children: ReactNode; size?: string }) {
+/** Piringan ikon besar (hero) di tengah layar fase — latar gelap berlingkar tepi. */
+export function BigIcon({ name, size = 44 }: { name: IconName; size?: number }) {
   return (
-    <div className="icon-glow mb-3 leading-none" style={{ fontSize: size }} aria-hidden="true">
-      {children}
+    <div className="hero-plate mb-4" style={{ '--plate-size': `${size + 32}px` } as React.CSSProperties}>
+      <span className="icon-glow inline-flex" style={{ '--plate-icon': `${size}px`, color: 'rgb(var(--glow, var(--accent)))' } as React.CSSProperties}>
+        <IconGlyph name={name} size={size} />
+      </span>
     </div>
   );
 }

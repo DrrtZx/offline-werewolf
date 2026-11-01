@@ -79,17 +79,17 @@ describe('calculateFinalRoles', () => {
     expect([r.seer, r.doctor, r.guardian]).toEqual([1, 0, 1]);
     expect(calculateFinalRoles(8, cfg({ seer: 'off', doctor: 'off' }), first)).toMatchObject({ seer: 0, doctor: 0 });
   });
-  it('memangkas guardian -> doctor -> seer -> hunter saat melebihi N', () => {
+  it('memangkas guardian -> doctor -> seer -> hunter untuk menyisakan 1 villager biasa', () => {
     // N=4: wolf 1 + hunter 3 + seer + doctor + guardian = 7 > 4
     const r = calculateFinalRoles(4, cfg({ hunter: 3, guardian: 'must' }), first);
     expect(r.guardian).toBe(0);
     expect(r.doctor).toBe(0);
     expect(r.seer).toBe(0);
-    expect(r.hunter).toBe(3);
-    expect(r.villager).toBe(0);
-    // N=4: wolf 1 + hunter 3 + seer = 5 -> seer dipangkas, hunter tetap 3 (total 4)
+    expect(r.hunter).toBe(2);
+    expect(r.villager).toBe(1);
+    // N=4: wolf 1 + hunter 3 + seer = 5 -> seer lalu 1 hunter dipangkas
     const r2 = calculateFinalRoles(4, cfg({ hunter: 3, doctor: 'off' }), first);
-    expect(r2).toMatchObject({ werewolf: 1, hunter: 3, seer: 0, villager: 0 });
+    expect(r2).toMatchObject({ werewolf: 1, hunter: 2, seer: 0, villager: 1 });
   });
   it('jumlah role selalu = N', () => {
     for (let n = 4; n <= 16; n++) {
@@ -113,10 +113,10 @@ describe('validateSetup', () => {
     // N=4 -> maxWolf = 1 sehingga tidak mungkin melanggar lewat konfigurasi; valid
     expect(validateSetup(names(4), cfg({ werewolf: 3 }), first)).toMatchObject({ valid: true });
   });
-  it('memberi warning jika villager = 0', () => {
+  it('membatasi hunter agar tersisa minimal satu villager biasa', () => {
     const res = validateSetup(names(4), cfg({ hunter: 3, seer: 'off', doctor: 'off' }), first);
     expect(res).toMatchObject({ valid: true });
-    if (res.valid) expect(res.warning).toMatch(/Tidak ada Warga Biasa/);
+    if (res.valid) expect(res.roles).toMatchObject({ werewolf: 1, hunter: 2, villager: 1 });
   });
   it('checkAddPlayer: maks 12 karakter, duplikat, kosong, batas 16', () => {
     const base = names(3);
@@ -175,13 +175,39 @@ describe('resolveDawn', () => {
 
 describe('aturan kartu malam', () => {
   const players = [mk('w', 'werewolf'), mk('d', 'doctor'), mk('v', 'villager'), mk('s', 'seer')];
-  const base = { players, round: 1, turnIndex: 0, nightActions: { doctorTarget: null } };
+  const base = {
+    players,
+    round: 1,
+    turnIndex: 0,
+    nightActions: { doctorTarget: null, wolfVotes: {}, hunterVotes: {} },
+    doctorSelfProtect: true,
+  };
 
   it('werewolf hanya melihat non-serigala hidup; seer tidak melihat diri', () => {
     const wolf = getNightActionCard({ ...base, player: players[0]!, history: { lastDoctorTarget: null, doctorSelfUsed: false } });
     expect(wolf.options.map((o) => o.id)).toEqual(['d', 'v', 's']);
     const seer = getNightActionCard({ ...base, player: players[3]!, history: { lastDoctorTarget: null, doctorSelfUsed: false } });
     expect(seer.options.map((o) => o.id)).toEqual(['w', 'd', 'v']);
+  });
+  it('menampilkan jumlah suara tim sebelumnya untuk Werewolf dan Hunter', () => {
+    const wolf = getNightActionCard({
+      ...base,
+      player: players[0]!,
+      nightActions: { ...base.nightActions, wolfVotes: { w1: 'd', w2: 'd', w3: 'v' } },
+      history: { lastDoctorTarget: null, doctorSelfUsed: false },
+    });
+    expect(wolf.options.find((option) => option.id === 'd')?.voteCount).toBe(2);
+    expect(wolf.options.find((option) => option.id === 'v')?.voteCount).toBe(1);
+
+    const hunters = [mk('h1', 'hunter'), mk('h2', 'hunter'), ...players];
+    const hunter = getNightActionCard({
+      ...base,
+      players: hunters,
+      player: hunters[0]!,
+      nightActions: { ...base.nightActions, hunterVotes: { h2: 'd', h3: 'd' } },
+      history: { lastDoctorTarget: null, doctorSelfUsed: false },
+    });
+    expect(hunter.options.find((option) => option.id === 'd')?.voteCount).toBe(2);
   });
   it('doctor: tidak boleh target sama 2 malam & self-protect sekali', () => {
     const card = getNightActionCard({
@@ -191,6 +217,15 @@ describe('aturan kartu malam', () => {
     });
     const disabled = card.options.filter((o) => o.disabled).map((o) => o.id);
     expect(disabled.sort()).toEqual(['d', 'v']);
+  });
+  it('doctor tidak dapat memilih diri sendiri saat pengaturan self-protect dimatikan', () => {
+    const card = getNightActionCard({
+      ...base,
+      player: players[1]!,
+      doctorSelfProtect: false,
+      history: { lastDoctorTarget: null, doctorSelfUsed: false },
+    });
+    expect(card.options.find((option) => option.id === 'd')?.disabled).toBe(true);
   });
   it('villager mendapat kuis sesuai seed', () => {
     const card = getNightActionCard({ ...base, player: players[2]!, history: { lastDoctorTarget: null, doctorSelfUsed: false } });
@@ -330,6 +365,23 @@ describe('reducer: immutability & guard', () => {
     for (let i = 0; i < 9; i++) r.run({ type: 'ADJUST_ROLE_COUNT', role: 'hunter', delta: -1 });
     expect(r.state.roleConfig.hunter).toBe(0);
   });
+  it('durasi aksi malam menerima pilihan 3 detik', () => {
+    const r = makeRunner();
+    r.run({ type: 'SET_NIGHT_DURATION', seconds: 3 });
+    expect(r.state.settings.minNightDurationSeconds).toBe(3);
+  });
+  it('batas hunter menyisakan setidaknya satu slot villager biasa', () => {
+    const r = makeRunner();
+    const state = getInitialState();
+    r.set({
+      ...state,
+      players: state.players.slice(0, 4),
+      roleConfig: { werewolf: 1, hunter: 0, seer: 'off', doctor: 'off', guardian: 'off' },
+    });
+    for (let i = 0; i < 5; i++) r.run({ type: 'ADJUST_ROLE_COUNT', role: 'hunter', delta: 1 });
+    expect(r.state.roleConfig.hunter).toBe(2);
+    expect(calculateFinalRoles(4, r.state.roleConfig, first).villager).toBe(1);
+  });
 });
 
 describe('reducer: alur malam', () => {
@@ -366,6 +418,28 @@ describe('reducer: alur malam', () => {
     expect(r.state.history.doctorSelfUsed).toBe(true);
     expect(r.state.nightActions.doctorTarget).toBe('p2');
   });
+  it('doctor self-protect dinonaktifkan benar-benar menolak pilihan diri', () => {
+    const r = makeRunner();
+    const state = nightState(['werewolf', 'doctor', 'villager', 'villager', 'seer']);
+    r.set({
+      ...state,
+      turnQueue: ['p2', 'p1', 'p3', 'p4', 'p5'],
+      settings: { ...state.settings, doctorSelfProtect: false },
+    });
+    r.run({ type: 'NIGHT_BEGIN' });
+    r.run({ type: 'NIGHT_OPEN_ACTION' });
+    const before = r.state;
+    expect(r.run({ type: 'NIGHT_CONFIRM', targetId: 'p2' })).toBe(before);
+  });
+  it('aksi malam Hunter menyimpan target bidikan siaga sebagai suara tim', () => {
+    const r = makeRunner();
+    const state = nightState(['werewolf', 'hunter', 'villager', 'villager', 'seer']);
+    r.set({ ...state, turnQueue: ['p2', 'p1', 'p3', 'p4', 'p5'] });
+    r.run({ type: 'NIGHT_BEGIN' });
+    r.run({ type: 'NIGHT_OPEN_ACTION' });
+    r.run({ type: 'NIGHT_CONFIRM', targetId: 'p3' });
+    expect(r.state.nightActions.hunterVotes).toEqual({ p2: 'p3' });
+  });
   it('villager: konfirmasi kuis tidak mengubah aksi malam', () => {
     const r = makeRunner();
     r.set(nightState(['villager', 'werewolf', 'villager', 'seer']));
@@ -376,6 +450,7 @@ describe('reducer: alur malam', () => {
       players: r.state.players,
       history: r.state.history,
       nightActions: r.state.nightActions,
+      doctorSelfProtect: r.state.settings.doctorSelfProtect,
       round: r.state.round,
       turnIndex: 0,
     });
@@ -431,6 +506,7 @@ describe('reducer: hunter', () => {
           players: st.players,
           history: st.history,
           nightActions: st.nightActions,
+          doctorSelfProtect: st.settings.doctorSelfProtect,
           round: st.round,
           turnIndex: st.turnIndex,
         });
@@ -518,6 +594,44 @@ describe('reducer: hunter', () => {
     expect(r.run({ type: 'HUNTER_CONFIRM', targetId: 'p2' })).toBe(before);
   });
 
+  it('hunter boleh melewatkan tembakan jika aturan tidak mewajibkan', () => {
+    const r = makeRunner();
+    const state = nightState(['werewolf', 'hunter', 'villager', 'villager', 'villager', 'seer']);
+    r.set({
+      ...state,
+      phase: 'DAY_PHASE',
+      cardStep: null,
+      hunterStep: null,
+      settings: { ...state.settings, hunterMandatory: false },
+    });
+    r.run({ type: 'ELIMINATE_PLAYER', playerId: 'p2' });
+    r.run({ type: 'HUNTER_PUBLIC_NEXT' });
+    r.run({ type: 'HUNTER_COVER_OPEN' });
+    r.run({ type: 'HUNTER_SKIP' });
+    expect(r.state.hunterStep).toBe('closing');
+    expect(r.state.lastHunterVictimId).toBeNull();
+    expect(r.state.players.filter((p) => p.isAlive)).toHaveLength(5);
+    r.run({ type: 'HUNTER_DONE' });
+    expect(r.state.phase).toBe('DAY_RESULT');
+  });
+
+  it('menolak skip hunter jika tembakan diwajibkan', () => {
+    const r = makeRunner();
+    const state = nightState(['werewolf', 'hunter', 'villager', 'villager', 'villager', 'seer']);
+    r.set({
+      ...state,
+      phase: 'DAY_PHASE',
+      cardStep: null,
+      hunterStep: null,
+      settings: { ...state.settings, hunterMandatory: true },
+    });
+    r.run({ type: 'ELIMINATE_PLAYER', playerId: 'p2' });
+    r.run({ type: 'HUNTER_PUBLIC_NEXT' });
+    r.run({ type: 'HUNTER_COVER_OPEN' });
+    const before = r.state;
+    expect(r.run({ type: 'HUNTER_SKIP' })).toBe(before);
+  });
+
   it('kondisi menang dicek setelah eliminasi siang', () => {
     const r = makeRunner();
     r.set({
@@ -591,7 +705,7 @@ describe('reducer: permainan penuh 6 pemain', () => {
     const phaseOf = (): Phase => r.state.phase;
     const shootAll = () => {
       let guard = 0;
-      while (phaseOf() === 'HUNTER_TRIGGER' && guard++ < 6) {
+      while (phaseOf() === 'HUNTER_TRIGGER' && guard++ < 100) {
         r.run({ type: 'HUNTER_PUBLIC_NEXT' });
         r.run({ type: 'HUNTER_COVER_OPEN' });
         const shooter = r.state.activeHunterShooterId;
@@ -613,6 +727,7 @@ describe('reducer: permainan penuh 6 pemain', () => {
             players: st.players,
             history: st.history,
             nightActions: st.nightActions,
+            doctorSelfProtect: st.settings.doctorSelfProtect,
             round: st.round,
             turnIndex: st.turnIndex,
           });

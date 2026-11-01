@@ -8,6 +8,7 @@ import Button from '@/components/game/Button';
 import Modal from '@/components/game/Modal';
 import { OptionList, StaggerItem } from '@/components/game/PlayerOption';
 import { BigIcon, Card } from '@/components/game/ui';
+import { Icon } from '@/components/icons/Icon';
 
 const WARNING_MS = 10_000;
 
@@ -70,7 +71,7 @@ export default function DayPhase() {
   return (
     <>
       <Card className="text-center">
-        <BigIcon size="2.8rem">☀️</BigIcon>
+        <BigIcon name="sun" size={34} />
         <h2 className="mb-1 text-xl">Siang Hari — Diskusi &amp; Voting</h2>
         <p className="mb-3 text-[0.9rem] text-muted">
           Lakukan diskusi dan angkat tangan secara langsung di dunia nyata.
@@ -84,7 +85,7 @@ export default function DayPhase() {
                 + 1 Menit
               </Button>
               <Button variant="secondary" small onClick={() => dispatch({ type: 'TIMER_TOGGLE' })}>
-                ⏯️ Jeda / Lanjut
+                <Icon name="pause" size={13} /> Jeda / Lanjut
               </Button>
             </div>
           </>
@@ -106,16 +107,18 @@ export default function DayPhase() {
                 onClick={() => setPending({ kind: 'eliminate', playerId: p.id })}
               >
                 <span className="break-words">
-                  <span aria-hidden="true">👤</span> <strong>{p.name}</strong>
+                  <Icon name="user" size={15} className="mr-1 inline-block text-muted" /> <strong>{p.name}</strong>
                 </span>
-                <span className="flex-none text-[0.85rem] text-danger">Eliminasi ➔</span>
+                <span className="flex-none inline-flex items-center gap-1 text-[0.85rem] text-danger">
+                  Eliminasi <Icon name="arrow-right" size={13} />
+                </span>
               </button>
             </StaggerItem>
           ))}
         </OptionList>
 
         <Button variant="skip" className="!min-h-[54px]" onClick={() => setPending({ kind: 'skip' })}>
-          ⏭️ Lewati Pemilihan (Skip Hari Ini / Tanpa Eliminasi)
+          <Icon name="skip" size={15} /> Lewati Pemilihan (Skip Hari Ini / Tanpa Eliminasi)
         </Button>
 
         {dead.length > 0 && (
@@ -132,9 +135,7 @@ export default function DayPhase() {
       </Card>
 
       <Modal open={pending?.kind === 'eliminate' && target !== undefined} titleId="eliminate-title" onClose={close}>
-        <div className="mb-2 text-6xl" aria-hidden="true">
-          ⚖️
-        </div>
+        <BigIcon name="scales" size={42} />
         <h2 id="eliminate-title" className="mb-3 text-xl">
           Konfirmasi Eliminasi
         </h2>
@@ -151,9 +152,7 @@ export default function DayPhase() {
       </Modal>
 
       <Modal open={pending?.kind === 'skip'} titleId="skip-title" onClose={close}>
-        <div className="mb-2 text-6xl" aria-hidden="true">
-          🕊️
-        </div>
+        <BigIcon name="dove" size={36} />
         <h2 id="skip-title" className="mb-3 text-xl">
           Lewati Pemilihan?
         </h2>

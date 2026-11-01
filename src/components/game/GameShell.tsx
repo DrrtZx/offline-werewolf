@@ -8,6 +8,7 @@ import { usePlatformEffects } from '@/hooks/usePlatformEffects';
 import { useScreenMotion } from '@/lib/ui/motion';
 import { cancelSpeech, speak } from '@/lib/platform/tts';
 import { clearSavedGame, inspectSavedGame, setPersistenceEnabled } from '@/lib/storage/persist';
+import { Icon, IconGlyph } from '@/components/icons/Icon';
 import type { Phase } from '@/types/game';
 import Button from './Button';
 import Modal from './Modal';
@@ -53,7 +54,7 @@ function TtsToggle() {
       className="flex min-h-[44px] items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-3.5 text-[0.82rem] font-bold"
       style={{ opacity: enabled ? 1 : 0.7 }}
     >
-      <span aria-hidden="true">{enabled ? '🔊' : '🔇'}</span>
+      <Icon name={enabled ? 'speaker-on' : 'speaker-off'} size={18} />
       <span>{enabled ? 'Suara: ON' : 'Suara: BISU'}</span>
     </button>
   );
@@ -83,8 +84,8 @@ function ScreenHost() {
 function RecoveryModal({ kind, onResume, onFresh }: { kind: 'resume' | 'invalid'; onResume: () => void; onFresh: () => void }) {
   return (
     <Modal open titleId="recovery-title">
-      <div className="mb-3 text-5xl" aria-hidden="true">
-        {kind === 'resume' ? '🎮' : '⚠️'}
+      <div className="mb-3 text-accent">
+        <IconGlyph name={kind === 'resume' ? 'gamepad' : 'warning'} size={48} />
       </div>
       <h2 id="recovery-title" className="mb-2 text-xl">
         {kind === 'resume' ? 'Lanjutkan Permainan?' : 'Data Tersimpan Tidak Dapat Dipakai'}
@@ -159,7 +160,7 @@ export default function GameShell() {
 
         <header className="top-bar">
           <div className="flex items-center gap-2 text-[1.05rem] font-bold tracking-tight">
-            <span aria-hidden="true">🐺</span>
+            <IconGlyph name="wolf" size={24} />
             <span className="brand-text">WEREWOLF</span>
           </div>
           {ready && <TtsToggle />}
