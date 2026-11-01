@@ -21,7 +21,7 @@ Dokumentasi proyek Werewolf lokal untuk dimainkan bergiliran menggunakan satu pe
 | Seer | Warga | Memeriksa satu pemain setiap malam untuk mengetahui apakah pemain itu Werewolf. |
 | Doctor | Warga | Melindungi satu pemain dari serangan malam. Target yang sama tidak dapat dipilih dua malam berturut-turut. Perlindungan diri, jika aktif, hanya dapat digunakan sekali per permainan. |
 | Guardian | Warga | Melindungi satu pemain, termasuk dirinya sendiri, dari serangan malam. |
-| Hunter | Warga | Menyiapkan target bidikan pada malam hari. Jika gugur, dapat menembak pemain lain; pengaturan dapat mewajibkan tembakan. |
+| Hunter | Warga | Dapat menyiapkan target bidikan atau memilih “Skip Vote” pada malam hari. Jika gugur, dapat menembak pemain lain; pengaturan dapat mewajibkan tembakan. |
 
 Role opsional dapat diatur sebagai wajib, acak, atau nonaktif. Jumlah Werewolf dan Hunter dapat memakai preset atau nilai tetap. Pembagian role menjaga setidaknya satu Villager biasa dan membatasi jumlah Werewolf sesuai jumlah pemain.
 
@@ -29,7 +29,7 @@ Role opsional dapat diatur sebagai wajib, acak, atau nonaktif. Jumlah Werewolf d
 
 1. **Persiapan:** masukkan 4–16 pemain, pilih jumlah atau mode role, lalu sesuaikan pengaturan.
 2. **Pembagian role:** setiap pemain melihat role secara privat saat gilirannya, lalu menyerahkan perangkat ke pemain berikutnya.
-3. **Malam:** pemain menjalankan aksi sesuai role. Target Werewolf dan Hunter yang telah dipilih rekan ditandai dengan hitungan suara. Suara tidak mengungkap siapa yang memilih.
+3. **Malam:** pemain menjalankan aksi sesuai role. Target Werewolf dan Hunter yang telah dipilih rekan ditandai dengan hitungan suara. Hunter boleh memilih “Skip Vote”; pilihan ini tidak menambah hitungan target. Suara tidak mengungkap siapa yang memilih.
 4. **Fajar:** suara Werewolf menentukan serangan; jika seri, target dipilih secara acak. Doctor atau Guardian dapat mencegah serangan jika melindungi target. Hunter yang gugur mendapat kesempatan menembak.
 5. **Siang:** pemain berdiskusi, lalu memilih pemain untuk dieliminasi. Timer diskusi dapat dimatikan atau diatur.
 6. **Kondisi menang:** Warga menang jika semua Werewolf gugur. Werewolf menang jika jumlah Werewolf yang masih hidup sama dengan atau lebih banyak dari pemain non-Werewolf yang masih hidup.

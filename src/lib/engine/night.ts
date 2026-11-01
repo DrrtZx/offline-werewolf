@@ -3,6 +3,8 @@ import { getQuizForTurn } from './quiz';
 import { cryptoRandomInt } from './rng';
 import type { RNG } from '@/types/game';
 
+const HUNTER_SKIP_VOTE = 'hunter_skip_vote';
+
 export interface NightCardContext {
   player: Player;
   players: readonly Player[];
@@ -65,11 +67,14 @@ export function getNightActionCard(ctx: NightCardContext): NightActionCard {
       };
     case 'hunter':
       return {
-        title: 'Pilih target bidikan siaga (suara Hunter terlihat)',
-        options: withVoteCounts(
-          living.filter((p) => p.id !== player.id).map((p) => ({ id: p.id, label: p.name })),
-          nightActions.hunterVotes,
-        ),
+        title: 'Pilih target bidikan siaga atau lewati pilihan',
+        options: [
+          ...withVoteCounts(
+            living.filter((p) => p.id !== player.id).map((p) => ({ id: p.id, label: p.name })),
+            nightActions.hunterVotes,
+          ),
+          { id: HUNTER_SKIP_VOTE, label: 'Skip Vote (Tidak memilih target)' },
+        ],
       };
     case 'villager':
     default: {
@@ -138,6 +143,11 @@ export function applyNightChoice(
     case 'guardian':
       return { nightActions: { ...nightActions, guardianTarget: targetId }, history };
     case 'hunter':
+      if (targetId === HUNTER_SKIP_VOTE) {
+        const hunterVotes = { ...nightActions.hunterVotes };
+        delete hunterVotes[player.id];
+        return { nightActions: { ...nightActions, hunterVotes }, history };
+      }
       return {
         nightActions: {
           ...nightActions,

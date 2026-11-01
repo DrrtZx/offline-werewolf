@@ -209,6 +209,29 @@ describe('aturan kartu malam', () => {
     });
     expect(hunter.options.find((option) => option.id === 'd')?.voteCount).toBe(2);
   });
+  it('Hunter mendapat opsi Skip Vote yang tidak menambah suara bidikan', () => {
+    const hunters = [mk('h1', 'hunter'), mk('h2', 'hunter'), ...players];
+    const card = getNightActionCard({
+      ...base,
+      players: hunters,
+      player: hunters[0]!,
+      history: { lastDoctorTarget: null, doctorSelfUsed: false },
+    });
+    expect(card.options.find((option) => option.id === 'hunter_skip_vote')?.label).toContain('Skip Vote');
+
+    const r = makeRunner();
+    const state = nightState(['werewolf', 'hunter', 'villager', 'villager', 'seer']);
+    r.set({
+      ...state,
+      turnQueue: ['p2', 'p1', 'p3', 'p4', 'p5'],
+      nightActions: { ...state.nightActions, hunterVotes: { p2: 'p3', otherHunter: 'p4' } },
+    });
+    r.run({ type: 'NIGHT_BEGIN' });
+    r.run({ type: 'NIGHT_OPEN_ACTION' });
+    r.run({ type: 'NIGHT_CONFIRM', targetId: 'hunter_skip_vote' });
+    expect(r.state.nightActions.hunterVotes).toEqual({ otherHunter: 'p4' });
+    expect(r.state.phase).toBe('NIGHT_CLOSING');
+  });
   it('doctor: tidak boleh target sama 2 malam & self-protect sekali', () => {
     const card = getNightActionCard({
       ...base,
