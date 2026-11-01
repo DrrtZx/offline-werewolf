@@ -1,0 +1,2539 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Werewolf Pass-and-Play</title>
+  <style>
+    :root {
+      --bg: #090a10;
+      --bg-night: #040508;
+      --card-bg: #141724;
+      --card-border: #23283e;
+      --card-hover: #1c2136;
+      --text: #f3f4f6;
+      --text-muted: #9ca3af;
+      --accent: #6366f1;
+      --accent-hover: #4f46e5;
+      --wolf: #ef4444;
+      --village: #10b981;
+      --seer: #a855f7;
+      --doctor: #06b6d4;
+      --guardian: #3b82f6;
+      --hunter: #f59e0b;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --success: #10b981;
+      --radius: 14px;
+      --font-main: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    input, textarea {
+      user-select: auto;
+      -webkit-user-select: auto;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: var(--font-main);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: stretch;
+      overflow-x: hidden;
+      font-size: 16px;
+      transition: background-color 0.4s ease;
+    }
+
+    body.night-mode {
+      background-color: var(--bg-night);
+    }
+
+    #app {
+      width: 100%;
+      max-width: 480px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      background: inherit;
+      padding: 16px;
+      padding-top: 60px;
+    }
+
+    /* Fixed Top Bar (Audio toggle & status) */
+    .top-bar {
+      position: fixed;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+      max-width: 480px;
+      height: 52px;
+      background: rgba(15, 18, 28, 0.85);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--card-border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 16px;
+      z-index: 100;
+    }
+
+    .app-brand {
+      font-weight: 800;
+      font-size: 1.05rem;
+      letter-spacing: -0.02em;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .app-brand span {
+      background: linear-gradient(135deg, #ef4444, #f59e0b);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .top-controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .audio-btn {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      color: var(--text);
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+
+    .audio-btn:active {
+      transform: scale(0.95);
+    }
+
+    .audio-btn.muted {
+      color: var(--text-muted);
+      border-color: #374151;
+      opacity: 0.7;
+    }
+
+    /* Typography & Core Elements */
+    h1, h2, h3 {
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    h1 { font-size: 1.6rem; margin-bottom: 8px; }
+    h2 { font-size: 1.35rem; margin-bottom: 12px; }
+    h3 { font-size: 1.1rem; margin-bottom: 8px; }
+    p { color: var(--text-muted); line-height: 1.5; font-size: 0.95rem; }
+
+    /* Button System */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 50px;
+      padding: 12px 20px;
+      border-radius: var(--radius);
+      border: none;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      text-decoration: none;
+      width: 100%;
+      gap: 8px;
+    }
+
+    .btn:active:not(:disabled) {
+      transform: scale(0.98);
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+    }
+    .btn-primary:hover:not(:disabled) { background: var(--accent-hover); }
+
+    .btn-danger {
+      background: var(--danger);
+      color: #fff;
+    }
+    .btn-danger:hover:not(:disabled) { background: #dc2626; }
+
+    .btn-secondary {
+      background: var(--card-bg);
+      color: var(--text);
+      border: 1px solid var(--card-border);
+    }
+    .btn-secondary:hover:not(:disabled) { background: var(--card-hover); }
+
+    .btn-skip {
+      background: #1f2438;
+      color: #cbd5e1;
+      border: 1.5px dashed #475569;
+    }
+    .btn-skip:hover:not(:disabled) {
+      background: #282f49;
+      border-color: #94a3b8;
+    }
+
+    .btn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+      transform: none !important;
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 10px;
+      width: 100%;
+    }
+
+    /* Cards */
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      padding: 18px;
+      margin-bottom: 16px;
+    }
+
+    /* Tabs */
+    .tabs {
+      display: flex;
+      background: #0f121e;
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      padding: 4px;
+      margin-bottom: 20px;
+    }
+
+    .tab-btn {
+      flex: 1;
+      padding: 10px 6px;
+      text-align: center;
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      border: none;
+      background: transparent;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .tab-btn.active {
+      background: var(--card-bg);
+      color: var(--text);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+
+    /* Setup Forms */
+    .input-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    .text-input {
+      flex: 1;
+      min-height: 48px;
+      background: #0e101a;
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      padding: 10px 14px;
+      color: var(--text);
+      font-size: 1rem;
+      outline: none;
+    }
+
+    .text-input:focus {
+      border-color: var(--accent);
+    }
+
+    .chips-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 18px;
+      max-height: 240px;
+      overflow-y: auto;
+      padding: 4px;
+    }
+
+    .player-chip {
+      background: #181d2e;
+      border: 1px solid var(--card-border);
+      color: var(--text);
+      padding: 8px 14px;
+      border-radius: 20px;
+      font-size: 0.92rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .chip-delete {
+      cursor: pointer;
+      color: #94a3b8;
+      font-weight: bold;
+      font-size: 1.1rem;
+      line-height: 1;
+    }
+    .chip-delete:hover { color: var(--danger); }
+
+    /* Role Steppers & Config */
+    .role-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .role-row:last-child { border-bottom: none; }
+
+    .role-info {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .role-name {
+      font-weight: 600;
+      font-size: 0.98rem;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .role-desc {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+
+    .stepper {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .step-btn {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      background: #1b2034;
+      border: 1px solid var(--card-border);
+      color: var(--text);
+      font-size: 1.2rem;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+    .step-btn:active { transform: scale(0.92); }
+
+    .step-val {
+      min-width: 32px;
+      text-align: center;
+      font-weight: 700;
+      font-size: 1.05rem;
+    }
+
+    .tri-state {
+      display: flex;
+      background: #0d0f17;
+      border-radius: 10px;
+      padding: 3px;
+      border: 1px solid var(--card-border);
+    }
+
+    .tri-btn {
+      padding: 6px 10px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .tri-btn.active {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    /* Badges */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .badge-wolf { background: rgba(239, 68, 68, 0.18); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.3); }
+    .badge-village { background: rgba(16, 185, 129, 0.18); color: #86efac; border: 1px solid rgba(16, 185, 129, 0.3); }
+    .badge-special { background: rgba(168, 85, 247, 0.18); color: #d8b4fe; border: 1px solid rgba(168, 85, 247, 0.3); }
+
+    /* Action Card & Options */
+    .options-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin: 16px 0;
+    }
+
+    .option-btn {
+      min-height: 54px;
+      background: #141726;
+      border: 1.5px solid var(--card-border);
+      border-radius: var(--radius);
+      padding: 12px 18px;
+      color: var(--text);
+      font-size: 1.02rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .option-btn:active {
+      transform: scale(0.98);
+    }
+
+    .option-btn.selected {
+      border-color: var(--accent);
+      background: rgba(99, 102, 241, 0.12);
+      box-shadow: 0 0 0 1px var(--accent);
+    }
+
+    .radio-circle {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      border: 2px solid var(--card-border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s ease;
+    }
+
+    .option-btn.selected .radio-circle {
+      border-color: var(--accent);
+      background: var(--accent);
+    }
+
+    .option-btn.selected .radio-circle::after {
+      content: '';
+      width: 8px;
+      height: 8px;
+      background: #fff;
+      border-radius: 50%;
+    }
+
+    /* Voting Player List for Fast Day Vote */
+    .vote-player-btn {
+      min-height: 52px;
+      background: #181d2f;
+      border: 1.5px solid var(--card-border);
+      border-radius: var(--radius);
+      padding: 12px 18px;
+      color: var(--text);
+      font-size: 1.05rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      width: 100%;
+    }
+
+    .vote-player-btn:hover {
+      background: #1f253d;
+      border-color: var(--danger);
+    }
+
+    .vote-player-btn:active {
+      transform: scale(0.98);
+    }
+
+    /* Tap & Hold Button */
+    .hold-container {
+      position: relative;
+      width: 100%;
+      margin: 24px 0 12px;
+    }
+
+    .hold-btn {
+      position: relative;
+      min-height: 64px;
+      background: #181c2e;
+      border: 2px solid var(--accent);
+      border-radius: var(--radius);
+      color: #fff;
+      font-size: 1.05rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      overflow: hidden;
+      width: 100%;
+    }
+
+    .hold-progress {
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 100%;
+      width: 0%;
+      background: var(--accent);
+      opacity: 0.35;
+      pointer-events: none;
+      transition: width 0.05s linear;
+    }
+
+    .hold-btn.holding .hold-progress {
+      background: var(--accent);
+      opacity: 0.6;
+    }
+
+    /* Night Timer Bar */
+    .timer-container {
+      width: 100%;
+      height: 6px;
+      background: #1f2438;
+      border-radius: 3px;
+      overflow: hidden;
+      margin-bottom: 16px;
+    }
+
+    .timer-bar {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #6366f1, #38bdf8);
+      transition: width 0.1s linear;
+    }
+
+    /* Modals & Popups */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.85);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      z-index: 200;
+    }
+
+    .modal-box {
+      width: 100%;
+      max-width: 420px;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      padding: 24px;
+      text-align: center;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      animation: popIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes popIn {
+      0% { opacity: 0; transform: scale(0.92); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+
+    /* Alert Boxes */
+    .alert {
+      padding: 12px 16px;
+      border-radius: var(--radius);
+      margin-bottom: 16px;
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      line-height: 1.4;
+    }
+
+    .alert-warning {
+      background: rgba(245, 158, 11, 0.15);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      color: #fde68a;
+    }
+
+    .alert-danger {
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      color: #fca5a5;
+    }
+
+    .alert-info {
+      background: rgba(99, 102, 241, 0.15);
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      color: #c7d2fe;
+    }
+
+    /* Privacy Warning Banner */
+    .privacy-shield-banner {
+      background: #111422;
+      border: 1px dashed #374151;
+      padding: 10px 14px;
+      border-radius: 10px;
+      font-size: 0.8rem;
+      color: #94a3b8;
+      margin-bottom: 16px;
+      text-align: center;
+    }
+
+    /* Helpers */
+    .text-center { text-align: center; }
+    .mt-auto { margin-top: auto; }
+    .mt-2 { margin-top: 8px; }
+    .mt-4 { margin-top: 16px; }
+    .mb-2 { margin-bottom: 8px; }
+    .mb-4 { margin-bottom: 16px; }
+    .flex-col { display: flex; flex-direction: column; }
+    .flex-center { display: flex; align-items: center; justify-content: center; }
+    .gap-2 { gap: 8px; }
+    .gap-3 { gap: 12px; }
+  </style>
+</head>
+<body>
+
+  <!-- Top Bar -->
+  <header class="top-bar">
+    <div class="app-brand">
+      🐺 <span>WEREWOLF</span>
+    </div>
+    <div class="top-controls">
+      <button id="ttsToggleBtn" class="audio-btn" onclick="toggleTTS()">
+        <span id="ttsIcon">🔊</span> <span id="ttsLabel">Suara: ON</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main id="app">
+    <!-- Dynamic views rendered here -->
+  </main>
+
+  <!-- Global Modal Popup Layer -->
+  <div id="modalContainer" style="display: none;"></div>
+
+  <script>
+    /* ==========================================================================
+       1. GAME CONSTANTS & QUESTION BANK
+       ========================================================================== */
+    const QUIZ_BANK = [
+      { q: "Siapa pemain yang paling jago berakting bohong?", type: "player" },
+      { q: "Siapa pemain yang paling gampang panik saat dituduh?", type: "player" },
+      { q: "Siapa yang paling sering telat kalau ada janjian?", type: "player" },
+      { q: "Siapa yang paling pendiam tapi mencurigakan?", type: "player" },
+      { q: "Siapa yang bicaranya paling meyakinkan saat membela diri?", type: "player" },
+      { q: "Siapa yang paling cocok dicurigai sebagai Serigala pertama?", type: "player" },
+      { q: "Siapa yang tatapannya paling misterius malam ini?", type: "player" },
+      { q: "Siapa yang biasanya paling cepat tereliminasi dalam permainan?", type: "player" },
+      { q: "Siapa yang paling santai padahal situasinya lagi genting?", type: "player" },
+      { q: "Siapa yang paling dermawan traktir teman-temannya?", type: "player" },
+      { q: "Bumi ini sebenarnya berbentuk apa menurut instingmu?", type: "custom", options: ["Bulat Pepat", "Datar Sempurna", "Donat Luar Angkasa", "Tidak Peduli"] },
+      { q: "Kalau terjebak di pulau terpencil, pilih bawa apa?", type: "custom", options: ["Pisau Lipat", "Handphone Tanpa Sinyal", "Selimut Hangat", "Teman yang Cerewet"] },
+      { q: "Makanan apa yang paling nikmat saat cuaca dingin?", type: "custom", options: ["Mie Kuah Pedas", "Bakso Urat Panas", "Soto Ayam Komplit", "Gorengan Hangat"] },
+      { q: "Hewan apa yang paling menggambarkan sifat aslimu?", type: "custom", options: ["Kucing Mageran", "Serigala Misterius", "Burung Elang Fokus", "Lumba-lumba Ceria"] },
+      { q: "Kalau dapat kekuatan super, kamu pilih yang mana?", type: "custom", options: ["Menghilang Tanpa Jejak", "Membaca Pikiran Orang", "Teleportasi Bebas", "Bisa Terbang Tinggi"] },
+      { q: "Minuman favorit saat nongkrong santai bareng teman?", type: "custom", options: ["Kopi Hitam Mantap", "Es Teh Manis Segar", "Matcha Latte Susu", "Air Mineral Dingin"] },
+      { q: "Berapa lama kamu bisa bertahan tanpa internet sama sekali?", type: "custom", options: ["Kurang dari 1 Jam", "Satu Hari Penuh", "Satu Minggu Santai", "Selamanya Asal Kenyang"] },
+      { q: "Apa senjata paling ampuh saat sedang berdebat sengit?", type: "custom", options: ["Data dan Fakta Logis", "Nada Suara yang Tenang", "Tatapan Mata Tajam", "Tertawa Sinis"] },
+      { q: "Pilih waktu tidur yang paling ideal untukmu?", type: "custom", options: ["Jam 9 Malam Rapih", "Jam 11 Malam Wajar", "Jam 2 Dini Hari", "Subuh Menjelang Terang"] },
+      { q: "Apa hal pertama yang kamu lakukan saat bangun tidur?", type: "custom", options: ["Cek Notifikasi HP", "Minum Segelas Air", "Tarik Selimut Lagi", "Langsung ke Kamar Mandi"] },
+      { q: "Destinasi liburan mana yang paling kamu dambakan?", type: "custom", options: ["Pantai Pasir Putih", "Puncak Gunung Sejuk", "Hutan Pinus Damai", "Kota Metropolitan Ramai"] },
+      { q: "Warna aura malam ini menurut firasat batinmu?", type: "custom", options: ["Merah Membara", "Biru Kelam Misterius", "Hitam Gulita Waspada", "Ungu Magis"] },
+      { q: "Bagaimana gayamu saat menghadapi tuduhan warga?", type: "custom", options: ["Bantah dengan Logika", "Pura-pura Tertawa Santai", "Tuduh Balik Penuduh", "Diam Seribu Bahasa"] },
+      { q: "Taktik terbaik apa kalau berpapasan dengan Serigala?", type: "custom", options: ["Lari Sekencang-kencangnya", "Pura-pura Mati Kaku", "Ajak Negosiasi Damai", "Panjat Pohon Terdekat"] },
+      { q: "Status warga desa malam ini kira-kira seperti apa?", type: "custom", options: ["Tidur Lelap Tanpa Beban", "Waspada Suara Mencurigakan", "Berdoa Semoga Aman", "Pura-pura Tidur"] }
+    ];
+
+    const ROLE_METAS = {
+      werewolf: { name: "Werewolf", icon: "🐺", team: "Serigala", teamBadge: "badge-wolf", desc: "Memangsa satu warga setiap malam bersama rekan Serigala." },
+      villager: { name: "Villager", icon: "🏡", team: "Warga", teamBadge: "badge-village", desc: "Warga biasa tanpa kekuatan malam. Temukan Serigala saat siang!" },
+      seer:     { name: "Seer", icon: "👁️", team: "Warga", teamBadge: "badge-special", desc: "Menerawang 1 pemain setiap malam untuk mengetahui pihak mereka." },
+      doctor:   { name: "Doctor", icon: "🩺", team: "Warga", teamBadge: "badge-special", desc: "Melindungi 1 pemain dari serangan Werewolf setiap malam." },
+      guardian: { name: "Guardian", icon: "🛡️", team: "Warga", teamBadge: "badge-special", desc: "Bisa melindungi 1 pemain atau diri sendiri agar kebal & selamat dari gigitan Werewolf." },
+      hunter:   { name: "Hunter", icon: "🏹", team: "Warga", teamBadge: "badge-special", desc: "Jika gugur, berhak menembak satu pemain untuk ikut mati." }
+    };
+
+    const PRESETS = {
+      4:  { werewolf: 1, hunter: 0, seer: 'must', doctor: 'off',    guardian: 'off' },
+      5:  { werewolf: 1, hunter: 0, seer: 'must', doctor: 'must',   guardian: 'off' },
+      6:  { werewolf: 1, hunter: 1, seer: 'must', doctor: 'must',   guardian: 'off' },
+      7:  { werewolf: 2, hunter: 1, seer: 'must', doctor: 'must',   guardian: 'off' },
+      8:  { werewolf: 2, hunter: 1, seer: 'must', doctor: 'must',   guardian: 'must' },
+      9:  { werewolf: 2, hunter: 1, seer: 'must', doctor: 'must',   guardian: 'must' },
+      10: { werewolf: 2, hunter: 2, seer: 'must', doctor: 'must',   guardian: 'must' },
+      11: { werewolf: 3, hunter: 2, seer: 'must', doctor: 'must',   guardian: 'must' },
+      12: { werewolf: 3, hunter: 2, seer: 'must', doctor: 'must',   guardian: 'must' },
+      13: { werewolf: 3, hunter: 2, seer: 'must', doctor: 'must',   guardian: 'must' },
+      14: { werewolf: 3, hunter: 2, seer: 'must', doctor: 'must',   guardian: 'must' },
+      15: { werewolf: 4, hunter: 2, seer: 'must', doctor: 'must',   guardian: 'must' },
+      16: { werewolf: 4, hunter: 2, seer: 'must', doctor: 'must',   guardian: 'must' }
+    };
+
+    /* ==========================================================================
+       2. INITIAL STATE & PERSISTENCE
+       ========================================================================== */
+    const STORAGE_KEY = 'werewolf_pass_and_play_v3_state';
+
+    let defaultState = {
+      phase: 'SETUP', // SETUP, ROLE_REVEAL, NIGHT_INTRO, NIGHT_ACTION, NIGHT_CLOSING, DAWN_REPORT, HUNTER_TRIGGER, DAY_PHASE, DAY_RESULT, GAME_OVER
+      setupStep: 'players', // players, roles, settings, summary
+      players: [
+        { id: 'p1', name: 'Alif', role: null, isAlive: true, deathCause: null, deathRound: null },
+        { id: 'p2', name: 'Budi', role: null, isAlive: true, deathCause: null, deathRound: null },
+        { id: 'p3', name: 'Citra', role: null, isAlive: true, deathCause: null, deathRound: null },
+        { id: 'p4', name: 'Dian', role: null, isAlive: true, deathCause: null, deathRound: null },
+        { id: 'p5', name: 'Eko', role: null, isAlive: true, deathCause: null, deathRound: null },
+        { id: 'p6', name: 'Fani', role: null, isAlive: true, deathCause: null, deathRound: null }
+      ],
+      roleConfig: {
+        werewolf: 'auto',
+        hunter: 'auto',
+        seer: 'must',
+        doctor: 'must',
+        guardian: 'off'
+      },
+      settings: {
+        revealDeadRole: true,
+        showWolfTeam: true,
+        showHunterTeam: true,
+        discussionTimerMinutes: 5,
+        minNightDurationSeconds: 8,
+        doctorSelfProtect: true,
+        hunterMandatory: true,
+        ttsEnabled: true
+      },
+      round: 1,
+      finalRoles: {},
+      turnQueue: [],
+      turnIndex: 0,
+      nightActions: {
+        wolfVotes: {},
+        hunterVotes: {},
+        doctorTarget: null,
+        guardianTarget: null,
+        seerTarget: null
+      },
+      aimedTargetId: null, // standby target from hunter
+      history: {
+        lastDoctorTarget: null,
+        doctorSelfUsed: false,
+        log: []
+      },
+      hunterQueue: [], // IDs of hunters waiting to shoot
+      activeHunterShooterId: null,
+      dawnSummary: null,
+      dayEliminatedPlayer: null,
+      winner: null
+    };
+
+    let state = JSON.parse(JSON.stringify(defaultState));
+
+    function saveState() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      } catch (e) {
+        console.warn("Storage error", e);
+      }
+    }
+
+    function resetGame(fullReset = false) {
+      if (fullReset) {
+        localStorage.removeItem(STORAGE_KEY);
+        state = JSON.parse(JSON.stringify(defaultState));
+      } else {
+        // Keep players & config, reset match
+        state.phase = 'SETUP';
+        state.setupStep = 'players';
+        state.round = 1;
+        state.turnQueue = [];
+        state.turnIndex = 0;
+        state.nightActions = { wolfVotes: {}, hunterVotes: {}, doctorTarget: null, guardianTarget: null, seerTarget: null };
+        state.aimedTargetId = null;
+        state.history = { lastDoctorTarget: null, doctorSelfUsed: false, log: [] };
+        state.hunterQueue = [];
+        state.activeHunterShooterId = null;
+        state.dawnSummary = null;
+        state.dayEliminatedPlayer = null;
+        state.winner = null;
+        state.players.forEach(p => {
+          p.role = null;
+          p.isAlive = true;
+          p.deathCause = null;
+          p.deathRound = null;
+        });
+        saveState();
+      }
+      render();
+    }
+
+    /* ==========================================================================
+       3. WEB APIs: TTS, WAKE LOCK, ANTI-NAV, PRIVACY SHIELD
+       ========================================================================== */
+    function speakText(text) {
+      if (!state.settings.ttsEnabled) return;
+      if (!('speechSynthesis' in window)) return;
+      window.speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = 'id-ID';
+      u.rate = 0.95;
+      u.pitch = 1.0;
+      const voices = window.speechSynthesis.getVoices();
+      const idVoice = voices.find(v => v.lang === 'id-ID' || v.lang.startsWith('id'));
+      if (idVoice) u.voice = idVoice;
+      window.speechSynthesis.speak(u);
+    }
+
+    function toggleTTS() {
+      state.settings.ttsEnabled = !state.settings.ttsEnabled;
+      updateTTSUI();
+      saveState();
+      if (state.settings.ttsEnabled) {
+        speakText("Suara narator diaktifkan.");
+      } else {
+        if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+      }
+    }
+
+    function updateTTSUI() {
+      const btn = document.getElementById('ttsToggleBtn');
+      const icon = document.getElementById('ttsIcon');
+      const label = document.getElementById('ttsLabel');
+      if (state.settings.ttsEnabled) {
+        btn.classList.remove('muted');
+        icon.textContent = '🔊';
+        label.textContent = 'Suara: ON';
+      } else {
+        btn.classList.add('muted');
+        icon.textContent = '🔇';
+        label.textContent = 'Suara: BISU';
+      }
+    }
+
+    // Wake Lock
+    let wakeLock = null;
+    async function requestWakeLock() {
+      if ('wakeLock' in navigator) {
+        try {
+          wakeLock = await navigator.wakeLock.request('screen');
+        } catch (e) {
+          console.warn("WakeLock request error", e);
+        }
+      }
+    }
+
+    // Anti-Back History Guard
+    window.history.pushState(null, '', window.location.href);
+    window.addEventListener('popstate', function () {
+      window.history.pushState(null, '', window.location.href);
+    });
+
+    // Privacy Shield (Reset Action Card if tab blurred/hidden during secret night action)
+    function handlePrivacyBlur() {
+      if (state.phase === 'NIGHT_ACTION') {
+        currentTempChoice = null;
+        state.phase = 'NIGHT_HANDOVER';
+        render();
+      }
+    }
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) handlePrivacyBlur();
+    });
+    window.addEventListener('blur', handlePrivacyBlur);
+
+    /* ==========================================================================
+       4. CRYPTO RANDOM UTILS
+       ========================================================================== */
+    function cryptoRandomInt(min, max) {
+      const range = max - min + 1;
+      const arr = new Uint32Array(1);
+      window.crypto.getRandomValues(arr);
+      return min + (arr[0] % range);
+    }
+
+    function shuffleArray(arr) {
+      const copy = [...arr];
+      for (let i = copy.length - 1; i > 0; i--) {
+        const j = cryptoRandomInt(0, i);
+        [copy[i], copy[j]] = [copy[j], copy[i]];
+      }
+      return copy;
+    }
+
+    /* ==========================================================================
+       5. SETUP & ROLE CALCULATION
+       ========================================================================== */
+    function calculateFinalRoles() {
+      const N = state.players.length;
+      const preset = PRESETS[N] || PRESETS[6];
+
+      let wolfCount = state.roleConfig.werewolf === 'auto' ? preset.werewolf : parseInt(state.roleConfig.werewolf, 10);
+      let hunterCount = state.roleConfig.hunter === 'auto' ? preset.hunter : parseInt(state.roleConfig.hunter, 10);
+
+      const maxWolf = Math.min(5, Math.floor((N - 1) / 2));
+      wolfCount = Math.min(maxWolf, Math.max(1, wolfCount));
+
+      let seerCount = 0;
+      if (state.roleConfig.seer === 'must') seerCount = 1;
+      else if (state.roleConfig.seer === 'random') seerCount = cryptoRandomInt(0, 1);
+
+      let doctorCount = 0;
+      if (state.roleConfig.doctor === 'must') doctorCount = 1;
+      else if (state.roleConfig.doctor === 'random') doctorCount = cryptoRandomInt(0, 1);
+
+      let guardianCount = 0;
+      if (state.roleConfig.guardian === 'must') guardianCount = 1;
+      else if (state.roleConfig.guardian === 'random') guardianCount = cryptoRandomInt(0, 1);
+
+      let occupied = wolfCount + hunterCount + seerCount + doctorCount + guardianCount;
+      if (occupied > N) {
+        if (guardianCount > 0 && occupied > N) { guardianCount = 0; occupied--; }
+        if (doctorCount > 0 && occupied > N) { doctorCount = 0; occupied--; }
+        if (seerCount > 0 && occupied > N) { seerCount = 0; occupied--; }
+        if (hunterCount > 0 && occupied > N) { hunterCount = Math.max(0, N - wolfCount); occupied = wolfCount + hunterCount; }
+      }
+
+      let villagerCount = Math.max(0, N - (wolfCount + hunterCount + seerCount + doctorCount + guardianCount));
+
+      return {
+        werewolf: wolfCount,
+        hunter: hunterCount,
+        seer: seerCount,
+        doctor: doctorCount,
+        guardian: guardianCount,
+        villager: villagerCount
+      };
+    }
+
+    function validateSetup() {
+      const N = state.players.length;
+      if (N < 4) return { valid: false, message: "Minimal butuh 4 pemain." };
+      if (N > 16) return { valid: false, message: "Maksimal 16 pemain." };
+
+      const names = state.players.map(p => p.name.trim().toLowerCase());
+      const uniqueNames = new Set(names);
+      if (uniqueNames.size !== names.length) {
+        return { valid: false, message: "Nama setiap pemain harus unik!" };
+      }
+
+      const calculated = calculateFinalRoles();
+      if (calculated.werewolf < 1) return { valid: false, message: "Minimal harus ada 1 Werewolf." };
+      if (calculated.werewolf >= (N - calculated.werewolf)) {
+        return { valid: false, message: "Jumlah Serigala harus lebih sedikit dari warga." };
+      }
+
+      let warning = null;
+      if (calculated.villager === 0) warning = "Perhatian: Tidak ada Warga Biasa (Villager) tersisa.";
+
+      return { valid: true, warning, roles: calculated };
+    }
+
+    /* ==========================================================================
+       6. PHASE TRANSITIONS & LOGIC
+       ========================================================================== */
+    function startGame() {
+      const val = validateSetup();
+      if (!val.valid) {
+        alert(val.message);
+        return;
+      }
+
+      requestWakeLock();
+      state.finalRoles = val.roles;
+
+      // Role assignment
+      const pool = [];
+      for (let i = 0; i < state.finalRoles.werewolf; i++) pool.push('werewolf');
+      for (let i = 0; i < state.finalRoles.hunter; i++) pool.push('hunter');
+      for (let i = 0; i < state.finalRoles.seer; i++) pool.push('seer');
+      for (let i = 0; i < state.finalRoles.doctor; i++) pool.push('doctor');
+      for (let i = 0; i < state.finalRoles.guardian; i++) pool.push('guardian');
+      for (let i = 0; i < state.finalRoles.villager; i++) pool.push('villager');
+
+      const shuffledPool = shuffleArray(pool);
+      state.players.forEach((p, idx) => {
+        p.role = shuffledPool[idx];
+        p.isAlive = true;
+        p.deathCause = null;
+        p.deathRound = null;
+      });
+
+      // Role reveal turn queue
+      state.turnQueue = shuffleArray(state.players.map(p => p.id));
+      state.turnIndex = 0;
+      state.phase = 'ROLE_REVEAL';
+      subRevealStep = 'cover';
+      saveState();
+      render();
+    }
+
+    function startNightPhase() {
+      const living = state.players.filter(p => p.isAlive).map(p => p.id);
+      state.turnQueue = shuffleArray(living);
+      state.turnIndex = 0;
+      state.nightActions = {
+        wolfVotes: {},
+        hunterVotes: {},
+        doctorTarget: null,
+        guardianTarget: null,
+        seerTarget: null
+      };
+
+      state.phase = 'NIGHT_INTRO';
+      saveState();
+      render();
+      speakText("Malam telah tiba. Semua pemain menundukkan kepala dan pejamkan mata.");
+    }
+
+    function checkWinCondition() {
+      const wolvesAlive = state.players.filter(p => p.isAlive && p.role === 'werewolf').length;
+      const nonWolvesAlive = state.players.filter(p => p.isAlive && p.role !== 'werewolf').length;
+
+      if (wolvesAlive === 0) {
+        state.winner = 'village';
+        state.phase = 'GAME_OVER';
+        saveState();
+        render();
+        speakText("Permainan selesai. Kubu Warga menang!");
+        return true;
+      }
+
+      if (wolvesAlive >= nonWolvesAlive) {
+        state.winner = 'wolf';
+        state.phase = 'GAME_OVER';
+        saveState();
+        render();
+        speakText("Permainan selesai. Kubu Serigala menang!");
+        return true;
+      }
+
+      return false;
+    }
+
+    function resolveDawn() {
+      // 1. Tally Werewolf attack
+      const wolfVoteCounts = {};
+      Object.values(state.nightActions.wolfVotes).forEach(tid => {
+        if (tid) wolfVoteCounts[tid] = (wolfVoteCounts[tid] || 0) + 1;
+      });
+
+      let attackedId = null;
+      let maxVotes = 0;
+      let tiedCandidates = [];
+      for (let tid in wolfVoteCounts) {
+        if (wolfVoteCounts[tid] > maxVotes) {
+          maxVotes = wolfVoteCounts[tid];
+          tiedCandidates = [tid];
+        } else if (wolfVoteCounts[tid] === maxVotes) {
+          tiedCandidates.push(tid);
+        }
+      }
+      if (tiedCandidates.length > 0) {
+        const pick = cryptoRandomInt(0, tiedCandidates.length - 1);
+        attackedId = tiedCandidates[pick];
+      }
+
+      // 2. Tally Hunter standby votes
+      const hunterVoteCounts = {};
+      Object.values(state.nightActions.hunterVotes).forEach(tid => {
+        if (tid) hunterVoteCounts[tid] = (hunterVoteCounts[tid] || 0) + 1;
+      });
+      let aimedId = null;
+      let maxHVotes = 0;
+      let tiedHCandidates = [];
+      for (let tid in hunterVoteCounts) {
+        if (hunterVoteCounts[tid] > maxHVotes) {
+          maxHVotes = hunterVoteCounts[tid];
+          tiedHCandidates = [tid];
+        } else if (hunterVoteCounts[tid] === maxHVotes) {
+          tiedHCandidates.push(tid);
+        }
+      }
+      if (tiedHCandidates.length > 0) {
+        aimedId = tiedHCandidates[cryptoRandomInt(0, tiedHCandidates.length - 1)];
+      }
+      state.aimedTargetId = aimedId;
+
+      // 3. Protection resolutions (Doctor & Guardian)
+      const docTarget = state.nightActions.doctorTarget;
+      const guardianTarget = state.nightActions.guardianTarget;
+      const deadThisNight = [];
+
+      if (attackedId) {
+        let isProtectedByDoc = (docTarget === attackedId);
+        // Guardian can protect self or another player: both target and Guardian remain SAFE (kebal)
+        let isProtectedByGuardian = (guardianTarget === attackedId);
+
+        if (isProtectedByDoc || isProtectedByGuardian) {
+          // Attack cancelled, victim survives!
+        } else {
+          // Unprotected
+          const victim = state.players.find(p => p.id === attackedId);
+          if (victim && victim.isAlive) {
+            victim.isAlive = false;
+            victim.deathCause = 'wolf_attack';
+            victim.deathRound = state.round;
+            deadThisNight.push(victim);
+          }
+        }
+      }
+
+      // Record doctor history
+      state.history.lastDoctorTarget = docTarget;
+
+      // Queue Hunters who died
+      state.hunterQueue = [];
+      deadThisNight.forEach(p => {
+        if (p.role === 'hunter') {
+          state.hunterQueue.push(p.id);
+        }
+      });
+
+      state.dawnSummary = {
+        deadPlayers: deadThisNight
+      };
+
+      // Speak dawn report
+      if (deadThisNight.length === 0) {
+        speakText("Fajar tiba. Malam ini, tidak ada korban.");
+      } else {
+        const names = deadThisNight.map(p => p.name).join(" dan ");
+        speakText(`Fajar tiba. ${names} ditemukan tewas.`);
+      }
+
+      // Check Hunter trigger or Day
+      if (state.hunterQueue.length > 0) {
+        triggerNextHunterShot();
+      } else {
+        if (!checkWinCondition()) {
+          state.phase = 'DAWN_REPORT';
+          saveState();
+          render();
+        }
+      }
+    }
+
+    function triggerNextHunterShot() {
+      if (state.hunterQueue.length === 0) {
+        if (!checkWinCondition()) {
+          state.phase = 'DAWN_REPORT';
+          saveState();
+          render();
+        }
+        return;
+      }
+
+      state.activeHunterShooterId = state.hunterQueue.shift();
+      const hunter = state.players.find(p => p.id === state.activeHunterShooterId);
+      state.phase = 'HUNTER_TRIGGER';
+      subHunterStep = 'public';
+      saveState();
+      render();
+
+      speakText(`${hunter.name} adalah Hunter. Dia berhak menembak satu orang.`);
+    }
+
+    /* ==========================================================================
+       7. RENDER DISPATCHER
+       ========================================================================== */
+    let subRevealStep = 'cover'; // cover, card, closing
+    let subNightStep = 'cover';  // cover, action, closing
+    let subHunterStep = 'public';// public, cover, action, closing
+    let currentTempChoice = null;
+    let minTimerInterval = null;
+    let discussionTimerInterval = null;
+    let remainingDiscussionSeconds = 0;
+
+    function render() {
+      updateTTSUI();
+      const app = document.getElementById('app');
+
+      if (['NIGHT_INTRO', 'NIGHT_ACTION', 'NIGHT_HANDOVER', 'NIGHT_CLOSING'].includes(state.phase)) {
+        document.body.classList.add('night-mode');
+      } else {
+        document.body.classList.remove('night-mode');
+      }
+
+      switch (state.phase) {
+        case 'SETUP':
+          renderSetupView(app);
+          break;
+        case 'ROLE_REVEAL':
+          renderRoleRevealView(app);
+          break;
+        case 'NIGHT_INTRO':
+          renderNightIntroView(app);
+          break;
+        case 'NIGHT_HANDOVER':
+        case 'NIGHT_ACTION':
+        case 'NIGHT_CLOSING':
+          renderNightCycleView(app);
+          break;
+        case 'DAWN_REPORT':
+          renderDawnReportView(app);
+          break;
+        case 'HUNTER_TRIGGER':
+          renderHunterShotView(app);
+          break;
+        case 'DAY_PHASE':
+          renderDayPhaseView(app);
+          break;
+        case 'DAY_RESULT':
+          renderDayResultView(app);
+          break;
+        case 'GAME_OVER':
+          renderGameOverView(app);
+          break;
+        default:
+          app.innerHTML = `<div class="card">Unknown Phase: ${state.phase}</div>`;
+      }
+    }
+
+    /* ==========================================================================
+       8. COMPONENT: SETUP VIEW
+       ========================================================================== */
+    function renderSetupView(app) {
+      const N = state.players.length;
+      const val = validateSetup();
+      const roles = val.roles || calculateFinalRoles();
+
+      let stepHtml = '';
+      if (state.setupStep === 'players') {
+        stepHtml = `
+          <div class="card">
+            <h3>Daftar Pemain (${N}/16)</h3>
+            <p class="mb-4">Tambahkan nama teman-temanmu (minimal 4 pemain).</p>
+            
+            <div class="input-row">
+              <input type="text" id="playerNameInput" class="text-input" placeholder="Ketik nama pemain..." maxlength="12" />
+              <button class="btn btn-primary" style="width: auto; min-height: 48px;" onclick="addPlayer()">+ Tambah</button>
+            </div>
+
+            <div class="chips-container">
+              ${state.players.map((p, i) => `
+                <div class="player-chip">
+                  <span>${p.name}</span>
+                  <span class="chip-delete" onclick="removePlayer(${i})">&times;</span>
+                </div>
+              `).join('')}
+            </div>
+
+            <div class="btn-group mt-2">
+              <button class="btn btn-secondary" onclick="quickFillPlayers(6)">⚡ 6 Pemain</button>
+              <button class="btn btn-secondary" onclick="quickFillPlayers(8)">⚡ 8 Pemain</button>
+              <button class="btn btn-secondary" onclick="clearPlayers()">🗑️ Bersihkan</button>
+            </div>
+          </div>
+        `;
+      } else if (state.setupStep === 'roles') {
+        stepHtml = `
+          <div class="card">
+            <h3>Komposisi Role (${N} Pemain)</h3>
+            <p class="mb-4">Atur role sesuai selera atau gunakan preset rekomendasi.</p>
+
+            <!-- Werewolf Stepper -->
+            <div class="role-row">
+              <div class="role-info">
+                <span class="role-name">🐺 Werewolf</span>
+                <span class="role-desc">Kubu Serigala malam</span>
+              </div>
+              <div class="stepper">
+                <button class="step-btn" onclick="adjustRoleCount('werewolf', -1)">-</button>
+                <span class="step-val">${roles.werewolf}</span>
+                <button class="step-btn" onclick="adjustRoleCount('werewolf', 1)">+</button>
+              </div>
+            </div>
+
+            <!-- Hunter Stepper -->
+            <div class="role-row">
+              <div class="role-info">
+                <span class="role-name">🏹 Hunter</span>
+                <span class="role-desc">Menembak saat gugur</span>
+              </div>
+              <div class="stepper">
+                <button class="step-btn" onclick="adjustRoleCount('hunter', -1)">-</button>
+                <span class="step-val">${roles.hunter}</span>
+                <button class="step-btn" onclick="adjustRoleCount('hunter', 1)">+</button>
+              </div>
+            </div>
+
+            <!-- Seer Tri-state -->
+            <div class="role-row">
+              <div class="role-info">
+                <span class="role-name">👁️ Seer</span>
+                <span class="role-desc">Menerawang identitas</span>
+              </div>
+              <div class="tri-state">
+                <button class="tri-btn ${state.roleConfig.seer==='must'?'active':''}" onclick="setRoleStatus('seer', 'must')">Ada</button>
+                <button class="tri-btn ${state.roleConfig.seer==='random'?'active':''}" onclick="setRoleStatus('seer', 'random')">Acak</button>
+                <button class="tri-btn ${state.roleConfig.seer==='off'?'active':''}" onclick="setRoleStatus('seer', 'off')">Off</button>
+              </div>
+            </div>
+
+            <!-- Doctor Tri-state -->
+            <div class="role-row">
+              <div class="role-info">
+                <span class="role-name">🩺 Doctor</span>
+                <span class="role-desc">Melindungi dari gigitan</span>
+              </div>
+              <div class="tri-state">
+                <button class="tri-btn ${state.roleConfig.doctor==='must'?'active':''}" onclick="setRoleStatus('doctor', 'must')">Ada</button>
+                <button class="tri-btn ${state.roleConfig.doctor==='random'?'active':''}" onclick="setRoleStatus('doctor', 'random')">Acak</button>
+                <button class="tri-btn ${state.roleConfig.doctor==='off'?'active':''}" onclick="setRoleStatus('doctor', 'off')">Off</button>
+              </div>
+            </div>
+
+            <!-- Guardian Tri-state -->
+            <div class="role-row">
+              <div class="role-info">
+                <span class="role-name">🛡️ Guardian</span>
+                <span class="role-desc">Bisa lindungi diri sendiri / pemain lain (kebal)</span>
+              </div>
+              <div class="tri-state">
+                <button class="tri-btn ${state.roleConfig.guardian==='must'?'active':''}" onclick="setRoleStatus('guardian', 'must')">Ada</button>
+                <button class="tri-btn ${state.roleConfig.guardian==='random'?'active':''}" onclick="setRoleStatus('guardian', 'random')">Acak</button>
+                <button class="tri-btn ${state.roleConfig.guardian==='off'?'active':''}" onclick="setRoleStatus('guardian', 'off')">Off</button>
+              </div>
+            </div>
+
+            <!-- Villager Slot -->
+            <div class="role-row">
+              <div class="role-info">
+                <span class="role-name">🏡 Villager (Sisa)</span>
+                <span class="role-desc">Warga biasa tanpa kekuatan</span>
+              </div>
+              <div style="font-weight: 700; font-size: 1.1rem; color: var(--village);">
+                ${roles.villager} Slot
+              </div>
+            </div>
+
+            <div class="btn-group mt-4">
+              <button class="btn btn-secondary" onclick="applyPreset()">⭐ Pakai Preset</button>
+              <button class="btn btn-secondary" onclick="randomizeAllRoles()">🎲 Acak Semua</button>
+            </div>
+          </div>
+        `;
+      } else if (state.setupStep === 'settings') {
+        stepHtml = `
+          <div class="card">
+            <h3>Pengaturan Aturan</h3>
+            <p class="mb-4">Sesuaikan gameplay sesuai kenyamanan kelompokmu.</p>
+
+            <div class="role-row">
+              <div class="role-info">
+                <span class="role-name">Buka Role Saat Mati</span>
+                <span class="role-desc">Identitas diumumkan saat gugur</span>
+              </div>
+              <input type="checkbox" ${state.settings.revealDeadRole ? 'checked' : ''} onchange="toggleSetting('revealDeadRole')" style="transform: scale(1.3); cursor:pointer;">
+            </div>
+
+            <div class="role-row">
+              <div class="role-info">
+                <span class="role-name">Rekan Serigala Terlihat</span>
+                <span class="role-desc">Serigala tahu sesama rekannya</span>
+              </div>
+              <input type="checkbox" ${state.settings.showWolfTeam ? 'checked' : ''} onchange="toggleSetting('showWolfTeam')" style="transform: scale(1.3); cursor:pointer;">
+            </div>
+
+            <div class="role-row">
+              <div class="role-info">
+                <span class="role-name">Rekan Hunter Terlihat</span>
+                <span class="role-desc">Hunter tahu sesama rekannya</span>
+              </div>
+              <input type="checkbox" ${state.settings.showHunterTeam ? 'checked' : ''} onchange="toggleSetting('showHunterTeam')" style="transform: scale(1.3); cursor:pointer;">
+            </div>
+
+            <div class="role-row">
+              <div class="role-info">
+                <span class="role-name">Durasi Min. Malam</span>
+                <span class="role-desc">Mencegah kebocoran waktu</span>
+              </div>
+              <select class="text-input" style="width: auto; min-height: 40px;" onchange="setNightDuration(this.value)">
+                <option value="5" ${state.settings.minNightDurationSeconds===5?'selected':''}>5 Detik</option>
+                <option value="8" ${state.settings.minNightDurationSeconds===8?'selected':''}>8 Detik (Default)</option>
+                <option value="10" ${state.settings.minNightDurationSeconds===10?'selected':''}>10 Detik</option>
+              </select>
+            </div>
+
+            <div class="role-row">
+              <div class="role-info">
+                <span class="role-name">Timer Diskusi Siang</span>
+                <span class="role-desc">Batas waktu ngobrol warga</span>
+              </div>
+              <select class="text-input" style="width: auto; min-height: 40px;" onchange="setDiscussionTimer(this.value)">
+                <option value="0" ${state.settings.discussionTimerMinutes===0?'selected':''}>Mati</option>
+                <option value="3" ${state.settings.discussionTimerMinutes===3?'selected':''}>3 Menit</option>
+                <option value="5" ${state.settings.discussionTimerMinutes===5?'selected':''}>5 Menit (Default)</option>
+                <option value="10" ${state.settings.discussionTimerMinutes===10?'selected':''}>10 Menit</option>
+              </select>
+            </div>
+          </div>
+        `;
+      } else if (state.setupStep === 'summary') {
+        const wolfCount = roles.werewolf;
+        const villageCount = N - wolfCount;
+
+        stepHtml = `
+          <div class="card">
+            <h3>Ringkasan Permainan</h3>
+            <p class="mb-4">Siap bermain dengan 1 HP bergilir!</p>
+
+            <div class="alert alert-info">
+              <div>
+                <strong>${N} Pemain Terdaftar</strong><br>
+                🐺 <strong>${wolfCount} Serigala</strong> vs 🏡 <strong>${villageCount} Warga</strong>
+              </div>
+            </div>
+
+            <div class="privacy-shield-banner">
+              🛡️ <strong>Anti-Bocor Aktif:</strong> Urutan malam diacak, ada Dummy Quiz untuk Villager, dan voting siang instan tanpa oper HP satu-satu.
+            </div>
+
+            ${val.warning ? `<div class="alert alert-warning">⚠️ ${val.warning}</div>` : ''}
+
+            <button class="btn btn-primary mt-4" style="min-height: 58px; font-size: 1.15rem;" onclick="startGame()">
+              🚀 Mulai Permainan
+            </button>
+          </div>
+        `;
+      }
+
+      app.innerHTML = `
+        <div class="tabs">
+          <button class="tab-btn ${state.setupStep==='players'?'active':''}" onclick="setSetupStep('players')">1. Pemain (${N})</button>
+          <button class="tab-btn ${state.setupStep==='roles'?'active':''}" onclick="setSetupStep('roles')">2. Role</button>
+          <button class="tab-btn ${state.setupStep==='settings'?'active':''}" onclick="setSetupStep('settings')">3. Opsi</button>
+          <button class="tab-btn ${state.setupStep==='summary'?'active':''}" onclick="setSetupStep('summary')">4. Mulai</button>
+        </div>
+
+        ${stepHtml}
+      `;
+
+      const pInput = document.getElementById('playerNameInput');
+      if (pInput) {
+        pInput.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') addPlayer();
+        });
+      }
+    }
+
+    function setSetupStep(step) {
+      state.setupStep = step;
+      render();
+    }
+
+    function addPlayer() {
+      const input = document.getElementById('playerNameInput');
+      if (!input) return;
+      const val = input.value.trim();
+      if (!val) return;
+      if (state.players.length >= 16) {
+        alert("Maksimal 16 pemain.");
+        return;
+      }
+      if (state.players.some(p => p.name.toLowerCase() === val.toLowerCase())) {
+        alert("Nama pemain sudah terdaftar!");
+        return;
+      }
+      state.players.push({
+        id: 'p_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+        name: val,
+        role: null,
+        isAlive: true,
+        deathCause: null,
+        deathRound: null
+      });
+      saveState();
+      render();
+    }
+
+    function removePlayer(idx) {
+      state.players.splice(idx, 1);
+      saveState();
+      render();
+    }
+
+    function clearPlayers() {
+      state.players = [];
+      saveState();
+      render();
+    }
+
+    function quickFillPlayers(count) {
+      const names = ["Alif", "Budi", "Citra", "Dian", "Eko", "Fani", "Gita", "Hadi", "Indah", "Joko", "Kirana", "Lutfi", "Maya", "Naufal", "Oki", "Putri"];
+      state.players = names.slice(0, count).map((name, i) => ({
+        id: 'p' + (i + 1),
+        name: name,
+        role: null,
+        isAlive: true,
+        deathCause: null,
+        deathRound: null
+      }));
+      saveState();
+      render();
+    }
+
+    function adjustRoleCount(role, delta) {
+      const N = state.players.length;
+      const current = calculateFinalRoles()[role];
+      const maxWolf = Math.min(5, Math.floor((N - 1) / 2));
+
+      if (role === 'werewolf') {
+        let next = Math.max(1, Math.min(maxWolf, current + delta));
+        state.roleConfig.werewolf = next;
+      } else if (role === 'hunter') {
+        let next = Math.max(0, Math.min(N - 1, current + delta));
+        state.roleConfig.hunter = next;
+      }
+      saveState();
+      render();
+    }
+
+    function setRoleStatus(role, status) {
+      state.roleConfig[role] = status;
+      saveState();
+      render();
+    }
+
+    function applyPreset() {
+      const N = state.players.length;
+      const p = PRESETS[N] || PRESETS[6];
+      state.roleConfig.werewolf = p.werewolf;
+      state.roleConfig.hunter = p.hunter;
+      state.roleConfig.seer = p.seer;
+      state.roleConfig.doctor = p.doctor;
+      state.roleConfig.guardian = p.guardian;
+      saveState();
+      render();
+    }
+
+    function randomizeAllRoles() {
+      const N = state.players.length;
+      const maxW = Math.min(4, Math.floor((N - 1) / 2));
+      state.roleConfig.werewolf = cryptoRandomInt(1, Math.max(1, maxW));
+      state.roleConfig.hunter = cryptoRandomInt(0, 2);
+      state.roleConfig.seer = ['must', 'random', 'off'][cryptoRandomInt(0, 2)];
+      state.roleConfig.doctor = ['must', 'random', 'off'][cryptoRandomInt(0, 2)];
+      state.roleConfig.guardian = ['must', 'random', 'off'][cryptoRandomInt(0, 2)];
+      saveState();
+      render();
+    }
+
+    function toggleSetting(key) {
+      state.settings[key] = !state.settings[key];
+      saveState();
+      render();
+    }
+
+    function setNightDuration(val) {
+      state.settings.minNightDurationSeconds = parseInt(val, 10);
+      saveState();
+      render();
+    }
+
+    function setDiscussionTimer(val) {
+      state.settings.discussionTimerMinutes = parseInt(val, 10);
+      saveState();
+      render();
+    }
+
+    /* ==========================================================================
+       9. COMPONENT: ROLE REVEAL FLOW (3-Card Cycle)
+       ========================================================================== */
+    function renderRoleRevealView(app) {
+      const playerId = state.turnQueue[state.turnIndex];
+      const player = state.players.find(p => p.id === playerId);
+      const meta = ROLE_METAS[player.role];
+
+      if (subRevealStep === 'cover') {
+        app.innerHTML = `
+          <div class="card text-center" style="margin-top: 40px; padding: 36px 20px;">
+            <div style="font-size: 3rem; margin-bottom: 12px;">✉️</div>
+            <h2>Pembagian Kartu Rahasia</h2>
+            <p>Silakan berikan HP ini secara privat kepada:</p>
+            <div style="font-size: 1.8rem; font-weight: 800; color: #fff; margin: 18px 0;">
+              ${player.name}
+            </div>
+
+            <div class="hold-container">
+              <button class="hold-btn" id="revealHoldBtn">
+                <div class="hold-progress" id="revealHoldProgress"></div>
+                <span id="revealHoldText">Saya ${player.name} — Buka Kartu</span>
+              </button>
+            </div>
+            <p style="font-size: 0.8rem; color: var(--text-muted);">Tekan dan tahan tombol selama 1 detik.</p>
+          </div>
+        `;
+        attachHoldListener('revealHoldBtn', 'revealHoldProgress', () => {
+          subRevealStep = 'card';
+          render();
+        });
+      } else if (subRevealStep === 'card') {
+        let teammateList = '';
+        if (player.role === 'werewolf' && state.settings.showWolfTeam) {
+          const wolfFriends = state.players.filter(p => p.role === 'werewolf' && p.id !== player.id);
+          if (wolfFriends.length > 0) {
+            teammateList = `
+              <div class="alert alert-warning mt-4 text-center">
+                <strong>Rekan Serigalamu:</strong><br>
+                ${wolfFriends.map(f => `🐺 ${f.name}`).join(', ')}
+              </div>
+            `;
+          }
+        } else if (player.role === 'hunter' && state.settings.showHunterTeam) {
+          const hunterFriends = state.players.filter(p => p.role === 'hunter' && p.id !== player.id);
+          if (hunterFriends.length > 0) {
+            teammateList = `
+              <div class="alert alert-info mt-4 text-center">
+                <strong>Rekan Hunter:</strong><br>
+                ${hunterFriends.map(f => `🏹 ${f.name}`).join(', ')}
+              </div>
+            `;
+          }
+        }
+
+        app.innerHTML = `
+          <div class="card text-center" style="margin-top: 20px; padding: 28px 20px;">
+            <div style="font-size: 4rem; margin-bottom: 10px;">${meta.icon}</div>
+            <div class="badge ${meta.teamBadge} mb-2">${meta.team}</div>
+            <h1 style="color: #fff;">${meta.name}</h1>
+            <p style="margin: 14px 0 20px; line-height: 1.6;">${meta.desc}</p>
+            ${teammateList}
+
+            <button class="btn btn-primary mt-4" onclick="finishRevealCard()">
+              Tutup & Lanjutkan
+            </button>
+          </div>
+        `;
+      } else if (subRevealStep === 'closing') {
+        app.innerHTML = `
+          <div class="card text-center" style="margin-top: 40px; padding: 36px 20px;">
+            <div style="font-size: 3rem; margin-bottom: 12px;">🔒</div>
+            <h2>Kartu Ditutup</h2>
+            <p class="mb-4">Identitasmu aman. Jangan beri tahu siapa pun!</p>
+            <button class="btn btn-primary" onclick="nextRevealTurn()">
+              Serahkan ke Pemain Berikutnya
+            </button>
+          </div>
+        `;
+      }
+    }
+
+    function finishRevealCard() {
+      subRevealStep = 'closing';
+      render();
+    }
+
+    function nextRevealTurn() {
+      state.turnIndex++;
+      if (state.turnIndex >= state.turnQueue.length) {
+        startNightPhase();
+      } else {
+        subRevealStep = 'cover';
+        render();
+      }
+    }
+
+    /* ==========================================================================
+       10. COMPONENT: NIGHT PHASE (Anti-Leak 3-Card Cycle)
+       ========================================================================== */
+    function renderNightIntroView(app) {
+      app.innerHTML = `
+        <div class="card text-center" style="margin-top: 50px; padding: 40px 20px;">
+          <div style="font-size: 4rem; margin-bottom: 16px;">🌙</div>
+          <h1>Malam Telah Tiba</h1>
+          <p style="font-size: 1.05rem; margin-bottom: 24px; line-height: 1.6;">
+            Semua pemain harap <strong>menundukkan kepala</strong> dan <strong>memejamkan mata</strong>.<br>
+            Jangan ada yang mengintip!
+          </p>
+
+          <div class="privacy-shield-banner">
+            🤫 Layar dibuat sangat gelap dan senyap untuk menjaga kerahasiaan aksi malam.
+          </div>
+
+          <button class="btn btn-primary" style="min-height: 58px;" onclick="beginNightTurns()">
+            Mulai Giliran Malam
+          </button>
+        </div>
+      `;
+    }
+
+    function beginNightTurns() {
+      state.phase = 'NIGHT_HANDOVER';
+      subNightStep = 'cover';
+      saveState();
+      render();
+      speakText("Pemain berikutnya, silakan ambil HP.");
+    }
+
+    let nightTimerSecondsRemaining = 8;
+
+    function renderNightCycleView(app) {
+      const playerId = state.turnQueue[state.turnIndex];
+      const player = state.players.find(p => p.id === playerId);
+
+      if (subNightStep === 'cover') {
+        app.innerHTML = `
+          <div class="card text-center" style="margin-top: 40px; padding: 36px 20px;">
+            <div style="font-size: 3rem; margin-bottom: 12px;">🌙</div>
+            <h2>Giliran Malam</h2>
+            <p>Operkan HP secara perlahan kepada:</p>
+            <div style="font-size: 1.8rem; font-weight: 800; color: #fff; margin: 18px 0;">
+              ${player.name}
+            </div>
+
+            <div class="hold-container">
+              <button class="hold-btn" id="nightHoldBtn">
+                <div class="hold-progress" id="nightHoldProgress"></div>
+                <span id="nightHoldText">Saya ${player.name} — Buka Aksi</span>
+              </button>
+            </div>
+            <p style="font-size: 0.8rem; color: var(--text-muted);">Pastikan orang lain tetap memejamkan mata!</p>
+          </div>
+        `;
+        attachHoldListener('nightHoldBtn', 'nightHoldProgress', () => {
+          subNightStep = 'action';
+          currentTempChoice = null;
+          state.phase = 'NIGHT_ACTION';
+          startNightMinTimer();
+          render();
+        });
+      } else if (subNightStep === 'action') {
+        renderIdenticalNightActionCard(app, player);
+      } else if (subNightStep === 'closing') {
+        app.innerHTML = `
+          <div class="card text-center" style="margin-top: 40px; padding: 36px 20px;">
+            <div style="font-size: 3rem; margin-bottom: 12px;">✅</div>
+            <h2>Aksi Tersimpan</h2>
+            <p class="mb-4">Pilihanmu telah diamankan dan dihapus dari layar.</p>
+            <button id="nightNextBtn" class="btn btn-primary" style="opacity: 0.5;" disabled onclick="finishNightTurn()">
+              Serahkan ke Pemain Berikutnya...
+            </button>
+          </div>
+        `;
+
+        const jitterMs = cryptoRandomInt(300, 1800);
+        setTimeout(() => {
+          const btn = document.getElementById('nightNextBtn');
+          if (btn) {
+            btn.disabled = false;
+            btn.style.opacity = '1';
+            btn.textContent = 'Lanjutkan';
+          }
+        }, jitterMs);
+      }
+    }
+
+    function startNightMinTimer() {
+      if (minTimerInterval) clearInterval(minTimerInterval);
+      nightTimerSecondsRemaining = state.settings.minNightDurationSeconds;
+      const totalSeconds = nightTimerSecondsRemaining;
+
+      minTimerInterval = setInterval(() => {
+        nightTimerSecondsRemaining = Math.max(0, nightTimerSecondsRemaining - 0.2);
+        const percent = ((totalSeconds - nightTimerSecondsRemaining) / totalSeconds) * 100;
+        const bar = document.getElementById('nightMinTimerBar');
+        if (bar) bar.style.width = percent + '%';
+
+        const confirmBtn = document.getElementById('nightConfirmBtn');
+        if (confirmBtn && nightTimerSecondsRemaining <= 0 && currentTempChoice !== null) {
+          confirmBtn.disabled = false;
+        }
+
+        if (nightTimerSecondsRemaining <= 0) {
+          clearInterval(minTimerInterval);
+        }
+      }, 200);
+    }
+
+    function renderIdenticalNightActionCard(app, player) {
+      let cardTitle = "Pilih Tindakan Malam";
+      let options = [];
+
+      if (player.role === 'werewolf') {
+        cardTitle = "Pilih mangsa malam ini";
+        options = state.players
+          .filter(p => p.isAlive && p.role !== 'werewolf')
+          .map(p => ({ id: p.id, label: p.name }));
+      } else if (player.role === 'seer') {
+        cardTitle = "Pilih pemain untuk diintip";
+        options = state.players
+          .filter(p => p.isAlive && p.id !== player.id)
+          .map(p => ({ id: p.id, label: p.name }));
+      } else if (player.role === 'doctor') {
+        cardTitle = "Pilih pemain untuk dilindungi";
+        options = state.players
+          .filter(p => p.isAlive)
+          .map(p => {
+            let disabled = false;
+            let subtext = "";
+            if (p.id === state.history.lastDoctorTarget) {
+              disabled = true;
+              subtext = " (Tidak boleh sama 2 malam berturut-turut)";
+            }
+            if (p.id === player.id && state.history.doctorSelfUsed) {
+              disabled = true;
+              subtext = " (Batas lindungi diri sudah habis)";
+            }
+            return { id: p.id, label: p.name + subtext, disabled: disabled };
+          });
+      } else if (player.role === 'guardian') {
+        // GUARDIAN: Can protect anyone, INCLUDING himself (kebal/selamat)
+        cardTitle = "Pilih pemain untuk dilindungi (kebal)";
+        options = state.players
+          .filter(p => p.isAlive)
+          .map(p => ({
+            id: p.id,
+            label: p.id === player.id ? `${p.name} (Lindungi Diri Sendiri)` : p.name
+          }));
+      } else if (player.role === 'hunter') {
+        cardTitle = "Pilih target siaga tembak";
+        options = state.players
+          .filter(p => p.isAlive && p.id !== player.id)
+          .map(p => ({ id: p.id, label: p.name }));
+      } else if (player.role === 'villager') {
+        const qSeed = (state.round * 17 + state.turnIndex) % QUIZ_BANK.length;
+        const quiz = QUIZ_BANK[qSeed];
+        cardTitle = quiz.q;
+
+        if (quiz.type === 'player') {
+          options = state.players
+            .filter(p => p.isAlive)
+            .map(p => ({ id: p.id, label: p.name }));
+        } else {
+          options = quiz.options.map((opt, i) => ({ id: 'opt_' + i, label: opt }));
+        }
+      }
+
+      const shuffledOptions = shuffleArray(options);
+
+      app.innerHTML = `
+        <div class="card" style="margin-top: 10px;">
+          <div class="timer-container">
+            <div id="nightMinTimerBar" class="timer-bar"></div>
+          </div>
+
+          <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 4px;">
+            Pemain: <strong>${player.name}</strong>
+          </div>
+          <h2 style="font-size: 1.25rem;">${cardTitle}</h2>
+
+          <div class="options-list">
+            ${shuffledOptions.map(opt => `
+              <button class="option-btn ${currentTempChoice===opt.id?'selected':''}" 
+                ${opt.disabled ? 'disabled style="opacity:0.35;"' : ''} 
+                onclick="selectNightOption('${opt.id}')">
+                <span>${opt.label}</span>
+                <div class="radio-circle"></div>
+              </button>
+            `).join('')}
+          </div>
+
+          <button id="nightConfirmBtn" class="btn btn-primary mt-4" disabled onclick="confirmNightAction('${player.id}')">
+            Konfirmasi Pilihan
+          </button>
+        </div>
+      `;
+    }
+
+    function selectNightOption(optId) {
+      currentTempChoice = optId;
+      document.querySelectorAll('.option-btn').forEach(btn => btn.classList.remove('selected'));
+      const activeBtn = Array.from(document.querySelectorAll('.option-btn')).find(b => b.getAttribute('onclick')?.includes(optId));
+      if (activeBtn) activeBtn.classList.add('selected');
+
+      const confirmBtn = document.getElementById('nightConfirmBtn');
+      if (confirmBtn && nightTimerSecondsRemaining <= 0) {
+        confirmBtn.disabled = false;
+      }
+    }
+
+    function confirmNightAction(playerId) {
+      if (!currentTempChoice) return;
+      const player = state.players.find(p => p.id === playerId);
+
+      if (player.role === 'werewolf') {
+        state.nightActions.wolfVotes[playerId] = currentTempChoice;
+        proceedToClosing();
+      } else if (player.role === 'seer') {
+        state.nightActions.seerTarget = currentTempChoice;
+        const target = state.players.find(p => p.id === currentTempChoice);
+        const isWolf = target.role === 'werewolf';
+        showSeerPopup(target.name, isWolf, () => {
+          proceedToClosing();
+        });
+      } else if (player.role === 'doctor') {
+        state.nightActions.doctorTarget = currentTempChoice;
+        if (currentTempChoice === playerId) {
+          state.history.doctorSelfUsed = true;
+        }
+        proceedToClosing();
+      } else if (player.role === 'guardian') {
+        state.nightActions.guardianTarget = currentTempChoice;
+        proceedToClosing();
+      } else if (player.role === 'hunter') {
+        state.nightActions.hunterVotes[playerId] = currentTempChoice;
+        proceedToClosing();
+      } else if (player.role === 'villager') {
+        showFakeStatsPopup(() => {
+          proceedToClosing();
+        });
+      }
+    }
+
+    function showSeerPopup(targetName, isWolf, onClose) {
+      const modal = document.getElementById('modalContainer');
+      modal.style.display = 'flex';
+      modal.className = 'modal-overlay';
+      modal.innerHTML = `
+        <div class="modal-box">
+          <div style="font-size: 3.5rem; margin-bottom: 12px;">${isWolf ? '🐺' : '✅'}</div>
+          <h2>Hasil Penerawangan</h2>
+          <p style="font-size: 1.15rem; color: #fff; margin: 16px 0;">
+            <strong>${targetName}</strong> berpihak pada:
+          </p>
+          <div style="font-size: 1.4rem; font-weight: 800; color: ${isWolf ? 'var(--wolf)' : 'var(--village)'}; margin-bottom: 24px;">
+            ${isWolf ? 'Kubu Werewolf!' : 'Kubu Warga (Bukan Werewolf)'}
+          </div>
+          <button class="btn btn-primary" onclick="closeSeerModal()">Tutup & Rahasiakan</button>
+        </div>
+      `;
+      window.closeSeerModal = () => {
+        modal.style.display = 'none';
+        onClose();
+      };
+    }
+
+    function showFakeStatsPopup(onClose) {
+      const stats = [74, 82, 69, 91, 78, 85][cryptoRandomInt(0, 5)];
+      const modal = document.getElementById('modalContainer');
+      modal.style.display = 'flex';
+      modal.className = 'modal-overlay';
+      modal.innerHTML = `
+        <div class="modal-box">
+          <div style="font-size: 3.5rem; margin-bottom: 12px;">📊</div>
+          <h2>Opini Warga Desa</h2>
+          <p style="font-size: 1.15rem; color: #fff; margin: 16px 0;">
+            Survei rahasia para warga:
+          </p>
+          <div style="font-size: 1.4rem; font-weight: 800; color: var(--accent); margin-bottom: 24px;">
+            ${stats}% Warga Setuju Pilihanmu!
+          </div>
+          <button class="btn btn-primary" onclick="closeFakeStatsModal()">Tutup & Selesai</button>
+        </div>
+      `;
+      window.closeFakeStatsModal = () => {
+        modal.style.display = 'none';
+        onClose();
+      };
+    }
+
+    function proceedToClosing() {
+      currentTempChoice = null;
+      if (minTimerInterval) clearInterval(minTimerInterval);
+      state.phase = 'NIGHT_CLOSING';
+      subNightStep = 'closing';
+      render();
+    }
+
+    function finishNightTurn() {
+      state.turnIndex++;
+      if (state.turnIndex >= state.turnQueue.length) {
+        resolveDawn();
+      } else {
+        state.phase = 'NIGHT_HANDOVER';
+        subNightStep = 'cover';
+        render();
+        speakText("Pemain berikutnya, silakan ambil HP.");
+      }
+    }
+
+    /* ==========================================================================
+       11. COMPONENT: DAWN & HUNTER SHOT FLOW
+       ========================================================================== */
+    function renderDawnReportView(app) {
+      const dead = state.dawnSummary?.deadPlayers || [];
+
+      let content = '';
+      if (dead.length === 0) {
+        content = `
+          <div class="alert alert-info text-center" style="padding: 24px;">
+            <div style="font-size: 2.5rem; margin-bottom: 8px;">🕊️</div>
+            <h3 style="color: #fff;">Malam Tenang</h3>
+            <p>Malam ini tidak ada korban yang gugur!</p>
+          </div>
+        `;
+      } else {
+        content = `
+          <div class="alert alert-danger text-center" style="padding: 20px;">
+            <div style="font-size: 2.5rem; margin-bottom: 8px;">⚰️</div>
+            <h3 style="color: #fff;">Korban Malam Ini:</h3>
+            <div style="font-size: 1.4rem; font-weight: 800; color: #fff; margin: 12px 0;">
+              ${dead.map(p => {
+                let roleLabel = state.settings.revealDeadRole ? ` (${ROLE_METAS[p.role].name})` : '';
+                return p.name + roleLabel;
+              }).join(', ')}
+            </div>
+            <p>Telah gugur dan tidak dapat berbicara lagi.</p>
+          </div>
+        `;
+      }
+
+      app.innerHTML = `
+        <div class="card text-center" style="margin-top: 30px;">
+          <div style="font-size: 3.5rem; margin-bottom: 12px;">🌅</div>
+          <h1>Fajar Menyingsing</h1>
+          <p class="mb-4">Matahari telah terbit. Semua pemain silakan membuka mata!</p>
+
+          ${content}
+
+          <button class="btn btn-primary mt-4" style="min-height: 56px;" onclick="startDayPhase()">
+            Mulai Diskusi & Voting Siang
+          </button>
+        </div>
+      `;
+    }
+
+    function renderHunterShotView(app) {
+      const hunter = state.players.find(p => p.id === state.activeHunterShooterId);
+
+      if (subHunterStep === 'public') {
+        app.innerHTML = `
+          <div class="card text-center" style="margin-top: 40px; padding: 32px 20px;">
+            <div style="font-size: 4rem; margin-bottom: 12px;">🏹</div>
+            <div class="badge badge-special mb-2">Tembakan Terakhir</div>
+            <h1 style="color: #fff;">${hunter.name} adalah Hunter!</h1>
+            <p style="margin: 16px 0 24px; font-size: 1.05rem;">
+              Sebelum menghembuskan napas terakhir, Hunter berhak menembak mati 1 pemain pilihannya!
+            </p>
+
+            <button class="btn btn-primary" onclick="proceedHunterCover()">
+              Serahkan HP ke ${hunter.name}
+            </button>
+          </div>
+        `;
+      } else if (subHunterStep === 'cover') {
+        app.innerHTML = `
+          <div class="card text-center" style="margin-top: 40px; padding: 36px 20px;">
+            <div style="font-size: 3rem; margin-bottom: 12px;">🎯</div>
+            <h2>Bidikan Hunter</h2>
+            <p>Silakan berikan HP ini secara privat kepada:</p>
+            <div style="font-size: 1.8rem; font-weight: 800; color: #fff; margin: 18px 0;">
+              ${hunter.name}
+            </div>
+
+            <div class="hold-container">
+              <button class="hold-btn" id="hunterHoldBtn">
+                <div class="hold-progress" id="hunterHoldProgress"></div>
+                <span id="hunterHoldText">Saya ${hunter.name} — Bidik</span>
+              </button>
+            </div>
+          </div>
+        `;
+        attachHoldListener('hunterHoldBtn', 'hunterHoldProgress', () => {
+          subHunterStep = 'action';
+          currentTempChoice = state.aimedTargetId;
+          render();
+        });
+      } else if (subHunterStep === 'action') {
+        const livingTargets = state.players.filter(p => p.isAlive && p.id !== hunter.id);
+
+        app.innerHTML = `
+          <div class="card" style="margin-top: 10px;">
+            <h2>Pilih Sasaran Tembakan</h2>
+            <p class="mb-4">Pemain yang kamu pilih akan langsung gugur seketika.</p>
+
+            ${state.aimedTargetId ? `<div class="alert alert-info">🎯 Target Siaga malam telah terpilih otomatis (dapat diubah).</div>` : ''}
+
+            <div class="options-list">
+              ${livingTargets.map(t => `
+                <button class="option-btn ${currentTempChoice===t.id?'selected':''}" onclick="selectHunterTarget('${t.id}')">
+                  <span>${t.name}</span>
+                  <div class="radio-circle"></div>
+                </button>
+              `).join('')}
+            </div>
+
+            <button id="hunterConfirmBtn" class="btn btn-danger mt-4" ${!currentTempChoice?'disabled':''} onclick="confirmHunterShot()">
+              Tembak Sekarang!
+            </button>
+          </div>
+        `;
+      } else if (subHunterStep === 'closing') {
+        const victim = state.players.find(p => p.id === currentHunterVictimId);
+        app.innerHTML = `
+          <div class="card text-center" style="margin-top: 40px; padding: 32px 20px;">
+            <div style="font-size: 4rem; margin-bottom: 12px;">💥</div>
+            <h2>Tembakan Dilepaskan!</h2>
+            <div style="font-size: 1.6rem; font-weight: 800; color: var(--danger); margin: 16px 0;">
+              ${victim.name} tertembak gugur!
+            </div>
+            <p class="mb-4">Diumumkan ke seluruh warga desa.</p>
+            <button class="btn btn-primary" onclick="afterHunterShotDone()">
+              Lanjutkan
+            </button>
+          </div>
+        `;
+      }
+    }
+
+    function proceedHunterCover() {
+      subHunterStep = 'cover';
+      render();
+    }
+
+    function selectHunterTarget(targetId) {
+      currentTempChoice = targetId;
+      document.querySelectorAll('.option-btn').forEach(btn => btn.classList.remove('selected'));
+      const activeBtn = Array.from(document.querySelectorAll('.option-btn')).find(b => b.getAttribute('onclick')?.includes(targetId));
+      if (activeBtn) activeBtn.classList.add('selected');
+      const confirmBtn = document.getElementById('hunterConfirmBtn');
+      if (confirmBtn) confirmBtn.disabled = false;
+    }
+
+    let currentHunterVictimId = null;
+
+    function confirmHunterShot() {
+      if (!currentTempChoice) return;
+      const victim = state.players.find(p => p.id === currentTempChoice);
+      victim.isAlive = false;
+      victim.deathCause = 'hunter_shot';
+      victim.deathRound = state.round;
+      currentHunterVictimId = victim.id;
+
+      if (victim.role === 'hunter') {
+        state.hunterQueue.push(victim.id);
+      }
+
+      subHunterStep = 'closing';
+      render();
+      speakText(`${victim.name} gugur oleh tembakan Hunter!`);
+    }
+
+    function afterHunterShotDone() {
+      if (state.hunterQueue.length > 0) {
+        triggerNextHunterShot();
+      } else {
+        if (!checkWinCondition()) {
+          // If Hunter was triggered from Dawn report, go to Dawn report
+          // If Hunter was triggered from Day lynching, go to Day result
+          if (state.dayEliminatedPlayer !== null) {
+            state.phase = 'DAY_RESULT';
+          } else {
+            state.phase = 'DAWN_REPORT';
+          }
+          saveState();
+          render();
+        }
+      }
+    }
+
+    /* ==========================================================================
+       12. COMPONENT: FAST DAY PHASE (Direct Name Selection / Skip)
+       ========================================================================== */
+    function startDayPhase() {
+      state.phase = 'DAY_PHASE';
+      state.dayEliminatedPlayer = null;
+      remainingDiscussionSeconds = state.settings.discussionTimerMinutes * 60;
+      saveState();
+      render();
+      speakText("Selamat pagi. Saatnya berdiskusi dan menentukan siapa yang dicurigai.");
+
+      if (remainingDiscussionSeconds > 0) {
+        if (discussionTimerInterval) clearInterval(discussionTimerInterval);
+        discussionTimerInterval = setInterval(() => {
+          if (remainingDiscussionSeconds > 0) {
+            remainingDiscussionSeconds--;
+            const timerEl = document.getElementById('discTimerDisplay');
+            if (timerEl) {
+              const m = Math.floor(remainingDiscussionSeconds / 60);
+              const s = remainingDiscussionSeconds % 60;
+              timerEl.textContent = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+            }
+          }
+        }, 1000);
+      }
+    }
+
+    function renderDayPhaseView(app) {
+      const living = state.players.filter(p => p.isAlive);
+      const dead = state.players.filter(p => !p.isAlive);
+
+      const m = Math.floor(remainingDiscussionSeconds / 60);
+      const s = remainingDiscussionSeconds % 60;
+      const timeStr = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+
+      app.innerHTML = `
+        <div class="card text-center">
+          <div style="font-size: 2.8rem; margin-bottom: 6px;">☀️</div>
+          <h2>Siang Hari — Diskusi & Voting</h2>
+          <p style="font-size: 0.9rem; margin-bottom: 14px;">
+            Lakukan diskusi dan angkat tangan secara langsung di dunia nyata.
+          </p>
+
+          ${state.settings.discussionTimerMinutes > 0 ? `
+            <div style="font-size: 2.5rem; font-weight: 800; font-family: monospace; color: #fff; margin: 10px 0;" id="discTimerDisplay">
+              ${timeStr}
+            </div>
+            <div class="btn-group mb-4">
+              <button class="btn btn-secondary" style="min-height:42px; font-size:0.85rem;" onclick="addDiscussionTime(60)">+ 1 Menit</button>
+              <button class="btn btn-secondary" style="min-height:42px; font-size:0.85rem;" onclick="pauseDiscussionTimer()">⏯️ Jeda / Lanjut</button>
+            </div>
+          ` : ''}
+
+          <div style="text-align: left; margin: 18px 0 10px;">
+            <div style="font-weight: 700; font-size: 1.05rem; margin-bottom: 4px;">
+              Pilih Nama Yang Dieliminasi:
+            </div>
+            <div style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 12px;">
+              Ketuk nama pemain hasil musyawarah warga, atau lewati jika tidak ada kesepakatan:
+            </div>
+          </div>
+
+          <div class="options-list" style="margin-bottom: 16px;">
+            ${living.map(p => `
+              <button class="vote-player-btn" onclick="promptEliminatePlayer('${p.id}', '${p.name}')">
+                <span>👤 <strong>${p.name}</strong></span>
+                <span style="font-size: 0.85rem; color: var(--danger);">Eliminasi ➔</span>
+              </button>
+            `).join('')}
+          </div>
+
+          <!-- Fast Skip Option -->
+          <button class="btn btn-skip" style="min-height: 54px; margin-top: 8px;" onclick="promptSkipDayVote()">
+            ⏭️ Lewati Pemilihan (Skip Hari Ini / Tanpa Eliminasi)
+          </button>
+
+          ${dead.length > 0 ? `
+            <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 18px; text-align: left; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 10px;">
+              Sudah Gugur: ${dead.map(p => `<s>${p.name}</s>`).join(', ')}
+            </div>
+          ` : ''}
+        </div>
+      `;
+    }
+
+    function addDiscussionTime(sec) {
+      remainingDiscussionSeconds += sec;
+      render();
+    }
+
+    let isTimerPaused = false;
+    function pauseDiscussionTimer() {
+      if (isTimerPaused) {
+        if (discussionTimerInterval) clearInterval(discussionTimerInterval);
+        discussionTimerInterval = setInterval(() => {
+          if (remainingDiscussionSeconds > 0) {
+            remainingDiscussionSeconds--;
+            const timerEl = document.getElementById('discTimerDisplay');
+            if (timerEl) {
+              const m = Math.floor(remainingDiscussionSeconds / 60);
+              const s = remainingDiscussionSeconds % 60;
+              timerEl.textContent = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+            }
+          }
+        }, 1000);
+        isTimerPaused = false;
+      } else {
+        if (discussionTimerInterval) clearInterval(discussionTimerInterval);
+        isTimerPaused = true;
+      }
+    }
+
+    function promptEliminatePlayer(playerId, playerName) {
+      const modal = document.getElementById('modalContainer');
+      modal.style.display = 'flex';
+      modal.className = 'modal-overlay';
+      modal.innerHTML = `
+        <div class="modal-box">
+          <div style="font-size: 3.5rem; margin-bottom: 10px;">⚖️</div>
+          <h2>Konfirmasi Eliminasi</h2>
+          <p style="font-size: 1.1rem; color: #fff; margin: 16px 0;">
+            Apakah seluruh warga desa sepakat mengeliminasi:
+          </p>
+          <div style="font-size: 1.6rem; font-weight: 800; color: var(--danger); margin-bottom: 24px;">
+            ${playerName}
+          </div>
+          <div class="btn-group flex-col">
+            <button class="btn btn-danger" style="min-height: 52px;" onclick="confirmEliminatePlayer('${playerId}')">
+              Ya, Eliminasi ${playerName}
+            </button>
+            <button class="btn btn-secondary" onclick="closePromptModal()">
+              Batal
+            </button>
+          </div>
+        </div>
+      `;
+      window.closePromptModal = () => {
+        modal.style.display = 'none';
+      };
+    }
+
+    function confirmEliminatePlayer(playerId) {
+      const modal = document.getElementById('modalContainer');
+      modal.style.display = 'none';
+      if (discussionTimerInterval) clearInterval(discussionTimerInterval);
+
+      const eliminated = state.players.find(p => p.id === playerId);
+      eliminated.isAlive = false;
+      eliminated.deathCause = 'vote_lynch';
+      eliminated.deathRound = state.round;
+      state.dayEliminatedPlayer = eliminated;
+
+      speakText(`${eliminated.name} dieliminasi oleh warga desa.`);
+
+      // Check Hunter trigger from lynch
+      state.hunterQueue = [];
+      if (eliminated.role === 'hunter') {
+        state.hunterQueue.push(eliminated.id);
+        triggerNextHunterShot();
+        return;
+      }
+
+      if (!checkWinCondition()) {
+        state.phase = 'DAY_RESULT';
+        saveState();
+        render();
+      }
+    }
+
+    function promptSkipDayVote() {
+      const modal = document.getElementById('modalContainer');
+      modal.style.display = 'flex';
+      modal.className = 'modal-overlay';
+      modal.innerHTML = `
+        <div class="modal-box">
+          <div style="font-size: 3.5rem; margin-bottom: 10px;">🕊️</div>
+          <h2>Lewati Pemilihan?</h2>
+          <p style="font-size: 1.05rem; color: #fff; margin: 16px 0;">
+            Hari ini tidak ada pemain yang dieliminasi dan permainan langsung lanjut ke malam berikutnya.
+          </p>
+          <div class="btn-group flex-col">
+            <button class="btn btn-primary" style="min-height: 52px;" onclick="confirmSkipDayVote()">
+              Ya, Lewati Pemilihan
+            </button>
+            <button class="btn btn-secondary" onclick="closePromptModal()">
+              Batal
+            </button>
+          </div>
+        </div>
+      `;
+      window.closePromptModal = () => {
+        modal.style.display = 'none';
+      };
+    }
+
+    function confirmSkipDayVote() {
+      const modal = document.getElementById('modalContainer');
+      modal.style.display = 'none';
+      if (discussionTimerInterval) clearInterval(discussionTimerInterval);
+
+      state.dayEliminatedPlayer = null;
+      speakText("Pemilihan hari ini dilewati. Tidak ada pemain yang dieliminasi.");
+
+      state.phase = 'DAY_RESULT';
+      saveState();
+      render();
+    }
+
+    function renderDayResultView(app) {
+      const eliminated = state.dayEliminatedPlayer;
+
+      let resultBox = '';
+      if (eliminated) {
+        resultBox = `
+          <div class="alert alert-danger text-center" style="padding: 22px;">
+            <div style="font-size: 2.8rem; margin-bottom: 8px;">⚖️</div>
+            <h3 style="color: #fff;">Warga Dieliminasi:</h3>
+            <div style="font-size: 1.7rem; font-weight: 800; color: #fff; margin: 10px 0;">
+              ${eliminated.name}
+              ${state.settings.revealDeadRole ? `<span style="font-size:1.1rem; color:var(--text-muted);"><br>(${ROLE_METAS[eliminated.role].name})</span>` : ''}
+            </div>
+            <p>Telah dieksekusi oleh kesepakatan warga desa.</p>
+          </div>
+        `;
+      } else {
+        resultBox = `
+          <div class="alert alert-info text-center" style="padding: 22px;">
+            <div style="font-size: 2.8rem; margin-bottom: 8px;">🕊️</div>
+            <h3 style="color: #fff;">Pemilihan Dilewati</h3>
+            <p>Hari ini warga memutuskan untuk tidak mengeliminasi siapa pun.</p>
+          </div>
+        `;
+      }
+
+      app.innerHTML = `
+        <div class="card text-center" style="margin-top: 30px;">
+          <h2>Hasil Keputusan Siang</h2>
+          <p class="mb-4">Matahari mulai terbenam. Siap-siap menuju malam.</p>
+
+          ${resultBox}
+
+          <button class="btn btn-primary mt-4" style="min-height: 58px; font-size: 1.1rem;" onclick="proceedToNextNight()">
+            🌙 Masuk ke Malam Berikutnya
+          </button>
+        </div>
+      `;
+    }
+
+    function proceedToNextNight() {
+      state.round++;
+      startNightPhase();
+    }
+
+    /* ==========================================================================
+       13. COMPONENT: GAME OVER
+       ========================================================================== */
+    function renderGameOverView(app) {
+      const isWolfWin = state.winner === 'wolf';
+
+      app.innerHTML = `
+        <div class="card text-center" style="margin-top: 20px; padding: 28px 18px;">
+          <div style="font-size: 4.5rem; margin-bottom: 12px;">${isWolfWin ? '🐺' : '🎉'}</div>
+          <h1 style="color: ${isWolfWin ? 'var(--wolf)' : 'var(--village)'}; font-size: 1.8rem;">
+            ${isWolfWin ? 'Kubu Serigala Menang!' : 'Kubu Warga Menang!'}
+          </h1>
+          <p style="margin: 10px 0 24px; font-size: 1.05rem;">
+            ${isWolfWin 
+              ? 'Serigala berhasil menguasai desa dan melumpuhkan warga.' 
+              : 'Semua Serigala telah berhasil dieliminasi! Desa kini aman.'}
+          </p>
+
+          <div class="card text-left" style="background: #0f121e;">
+            <h3 style="margin-bottom: 14px; font-size: 1.1rem;">Semua Identitas Pemain</h3>
+            ${state.players.map(p => {
+              const meta = ROLE_METAS[p.role];
+              return `
+                <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid rgba(255,255,255,0.06);">
+                  <div>
+                    <strong>${p.name}</strong> 
+                    ${!p.isAlive ? '<span style="color:var(--danger); font-size:0.8rem;"> (Gugur)</span>' : ''}
+                  </div>
+                  <div class="badge ${meta.teamBadge}">
+                    ${meta.icon} ${meta.name}
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+
+          <div class="btn-group mt-4 flex-col">
+            <button class="btn btn-primary" onclick="resetGame(false)">
+              🔄 Main Lagi (Pemain & Opsi Sama)
+            </button>
+            <button class="btn btn-secondary" onclick="resetGame(true)">
+              ⚙️ Setup Permainan Baru
+            </button>
+          </div>
+        </div>
+      `;
+    }
+
+    /* ==========================================================================
+       14. TAP & HOLD HELPER
+       ========================================================================== */
+    function attachHoldListener(btnId, progressId, onSuccess) {
+      const btn = document.getElementById(btnId);
+      const progress = document.getElementById(progressId);
+      if (!btn || !progress) return;
+
+      let holdTimer = null;
+      let startTime = 0;
+      const DURATION = 1000;
+
+      function startHold(e) {
+        e.preventDefault();
+        startTime = Date.now();
+        btn.classList.add('holding');
+
+        holdTimer = setInterval(() => {
+          const elapsed = Date.now() - startTime;
+          const pct = Math.min(100, (elapsed / DURATION) * 100);
+          progress.style.width = pct + '%';
+
+          if (elapsed >= DURATION) {
+            cancelHold();
+            onSuccess();
+          }
+        }, 20);
+      }
+
+      function cancelHold() {
+        if (holdTimer) clearInterval(holdTimer);
+        holdTimer = null;
+        btn.classList.remove('holding');
+        progress.style.width = '0%';
+      }
+
+      btn.addEventListener('mousedown', startHold);
+      btn.addEventListener('touchstart', startHold, { passive: false });
+      window.addEventListener('mouseup', cancelHold);
+      window.addEventListener('touchend', cancelHold);
+    }
+
+    /* ==========================================================================
+       15. INIT ON LOAD
+       ========================================================================== */
+    window.addEventListener('DOMContentLoaded', () => {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (parsed && parsed.phase && parsed.phase !== 'SETUP') {
+            if (confirm("Ditemukan permainan yang sedang berlangsung. Lanjutkan?")) {
+              state = parsed;
+            } else {
+              localStorage.removeItem(STORAGE_KEY);
+            }
+          }
+        } catch (e) {
+          console.error("State restore error", e);
+        }
+      }
+      render();
+    });
+  </script>
+</body>
+</html>
