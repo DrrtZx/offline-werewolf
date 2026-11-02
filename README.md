@@ -1,5 +1,7 @@
 # Werewolf Pass-and-Play
 
+[Mainkan game](https://offline-werewolf.vercel.app/)
+
 Game Werewolf satu-ponsel (pass-and-play), dimigrasikan dari `index.html` (vanilla JS) ke Next.js 14 App Router + React 18 + TypeScript strict + Tailwind 3.4 + Zustand + Framer Motion (`LazyMotion`).
 `index.html` dipertahankan hanya sebagai referensi logika asli.
 
